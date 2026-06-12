@@ -1,0 +1,12 @@
+{
+  "name": "Cyber Sidekick",
+  "short_name": "Cyber Sidekick",
+  "description": "Check if a text, email, or call is a scam.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#3F3D9E",
+  "theme_color": "#3F3D9E",
+  "icons": [
+    { "src": "./icon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

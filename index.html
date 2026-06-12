@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Sidekick</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#3F3D9E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FBFAF8; --ink:#1A1A2B; --ink-soft:#55556A; --muted:#9A9AAB;
+    --line:#ECEAE5; --accent:#3F3D9E; --card:#FFFFFF;
+    --msg:15.5px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+  body.large{--msg:18px;font-size:19px;}
+  .page{max-width:600px;margin:0 auto;padding:0 24px;}
+
+  header{display:flex;align-items:center;gap:10px;padding:40px 0 0;}
+  header .shield{width:24px;height:27px;}
+  header .mark{font-family:'Newsreader',serif;font-weight:500;font-size:19px;letter-spacing:-.01em;}
+
+  .intro{padding:40px 0 30px;}
+  h1{font-family:'Newsreader',serif;font-weight:400;font-size:33px;line-height:1.18;letter-spacing:-.015em;margin:0 0 14px;}
+  .intro p{font-size:18px;color:var(--ink-soft);margin:0;max-width:46ch;}
+
+  .audience{margin:0 0 14px;}
+  .audience .label{font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;}
+  .aud-chips{display:flex;flex-wrap:wrap;gap:7px;}
+  .aud{font-size:13px;color:var(--ink-soft);background:var(--card);border:1px solid var(--line);padding:7px 13px;border-radius:999px;cursor:pointer;font-family:inherit;transition:.15s;}
+  .aud:hover{border-color:var(--accent);}
+  .aud.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+  .chat-card{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;}
+  .chat{height:400px;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:16px;}
+  .msg{font-size:var(--msg);line-height:1.55;max-width:88%;animation:rise .26s ease both;}
+  @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  .bot{align-self:flex-start;color:var(--ink);white-space:pre-wrap;}
+  .user{align-self:flex-end;background:var(--ink);color:#fff;padding:11px 15px;border-radius:14px;border-bottom-right-radius:4px;white-space:pre-wrap;}
+
+  .listen{margin-top:10px;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);background:transparent;border:1px solid var(--line);padding:5px 11px;border-radius:999px;cursor:pointer;font-family:inherit;}
+  .listen:hover{border-color:var(--accent);color:var(--accent);}
+  .listen.playing{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+  .typing{align-self:flex-start;display:flex;gap:5px;}
+  .typing i{width:6px;height:6px;border-radius:50%;background:#c9c9d4;animation:b 1s infinite;}
+  .typing i:nth-child(2){animation-delay:.15s;} .typing i:nth-child(3){animation-delay:.3s;}
+  @keyframes b{0%,80%,100%{opacity:.3;}40%{opacity:1;}}
+
+  .composer{border-top:1px solid var(--line);padding:14px;}
+  .chips{display:flex;flex-direction:column;gap:7px;margin-bottom:11px;}
+  .chip{font-size:13.5px;color:var(--ink-soft);background:transparent;border:1px solid var(--line);padding:9px 13px;border-radius:10px;cursor:pointer;text-align:left;transition:.15s;font-family:inherit;}
+  .chip:hover{border-color:var(--accent);color:var(--ink);}
+  .input-row{display:flex;gap:8px;}
+  .input-row input{flex:1;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:11px 13px;font-size:14.5px;font-family:inherit;color:var(--ink);}
+  .input-row input:focus{outline:none;border-color:var(--accent);}
+  .send{background:var(--ink);color:#fff;border:none;border-radius:10px;padding:0 16px;font-weight:500;font-size:14.5px;cursor:pointer;font-family:inherit;}
+  .send:hover{background:#2c2c44;}
+  .send:disabled{opacity:.5;cursor:default;}
+
+  footer{font-size:12.5px;color:var(--muted);line-height:1.6;padding:24px 2px 48px;}
+
+  @media (max-width:520px){h1{font-size:28px;}.intro p{font-size:16.5px;}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto;}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="shield" viewBox="0 0 24 27">
+    <path d="M12 1 L22 4.4 V13 C22 20 17.5 24 12 26 C6.5 24 2 20 2 13 V4.4 Z" fill="none" stroke="#3F3D9E" stroke-width="1.8" stroke-linejoin="round"/>
+    <path d="M8.2 13.2 L11 16 L16 9.6" fill="none" stroke="#3F3D9E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+</svg>
+
+<div class="page">
+  <header>
+    <svg class="shield"><use href="#shield"/></svg>
+    <span class="mark">Cyber Sidekick</span>
+  </header>
+
+  <section class="intro">
+    <h1>Got a text, email, or call that feels off?</h1>
+    <p>Paste it below. I'll tell you straight if it's a scam, and exactly what to do next.</p>
+  </section>
+
+  <div class="audience">
+    <div class="label">Who is this for?</div>
+    <div class="aud-chips" id="aud">
+      <button class="aud active" data-mode="me">Me</button>
+      <button class="aud" data-mode="senior">A senior I'm helping</button>
+      <button class="aud" data-mode="youth">A young person</button>
+      <button class="aud" data-mode="educator">My students</button>
+    </div>
+  </div>
+
+  <div class="chat-card">
+    <div class="chat" id="chat" aria-live="polite"></div>
+    <div class="composer">
+      <div class="chips" id="chips">
+        <button class="chip" data-key="cra">"CRA says I have a $402.50 refund, confirm here"</button>
+        <button class="chip" data-key="grandparent">"My grandson's in jail and needs gift cards"</button>
+        <button class="chip" data-key="etransfer">"Your Interac e-Transfer of $750 is pending"</button>
+      </div>
+      <div class="input-row">
+        <input id="field" type="text" placeholder="Or paste your own message..." aria-label="Paste a suspicious message">
+        <button class="send" id="send">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    A friendly AI helper, never a real person posing as one. Report scams to the Canadian Anti-Fraud Centre: 1-888-495-8501 / reportcyberandfraud.canada.ca
+  </footer>
+</div>
+
+<script>
+const GREET = {
+  me:"Hi, I'm Cyber Sidekick, an AI helper for spotting scams. I'm not a real person, but I'm here whenever something feels off. Tap an example, or paste a message.",
+  senior:"Hello. I'm Cyber Sidekick, a friendly helper for checking if something is a scam. I am not a real person, just a helpful program. Take your time, and tap an example or paste the message.",
+  youth:"Hey, I'm Cyber Sidekick, an AI that helps you spot scams. Not a real person, just here to help. Tap one of these or paste whatever looks sketchy.",
+  educator:"Hi, I'm Cyber Sidekick, an AI helper. I am not a real person. I'll break each scam down so you can show students how to spot one. Tap an example or paste a message."
+};
+
+const CHIP_TEXT = {
+  cra:"I got a text saying: \"CRA: You have an unclaimed refund of $402.50. Confirm your details: cra-refund-secure.ca\". Is this real?",
+  grandparent:"Someone called saying my grandson is in jail and needs $2,000 in gift cards for bail today. What should I do?",
+  etransfer:"I got an email: \"Your Interac e-Transfer of $750 is pending. Click to deposit before it expires.\" I wasn't expecting any money."
+};
+
+let mode = "me";
+
+const chat=document.getElementById('chat');
+const chips=document.getElementById('chips');
+const aud=document.getElementById('aud');
+const field=document.getElementById('field');
+const send=document.getElementById('send');
+const reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+function el(cls,html){const d=document.createElement('div');d.className=cls;d.innerHTML=html;return d;}
+function scroll(){chat.scrollTop=chat.scrollHeight;}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+function addListen(bubble, plainText){
+  const btn=document.createElement('button');
+  btn.className='listen';
+  btn.innerHTML='&#128266; Read aloud';
+  btn.addEventListener('click',()=>{
+    if(btn.classList.contains('playing')){speechSynthesis.cancel();return;}
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(plainText);
+    u.rate=mode==='senior'?0.9:1;
+    u.onend=()=>btn.classList.remove('playing');
+    btn.classList.add('playing');
+    speechSynthesis.speak(u);
+  });
+  bubble.appendChild(document.createElement('br'));
+  bubble.appendChild(btn);
+}
+
+function botBubble(text){
+  const b=el('msg bot', esc(text));
+  addListen(b, text);
+  chat.appendChild(b);scroll();
+}
+function userMsg(t){chat.appendChild(el('msg user', esc(t)));scroll();}
+
+function greet(){
+  chat.innerHTML='';
+  speechSynthesis.cancel();
+  botBubble(GREET[mode]);
+}
+
+async function ask(message){
+  userMsg(message);
+  send.disabled=true;
+  const typing=el('typing','<i></i><i></i><i></i>');
+  chat.appendChild(typing);scroll();
+  try{
+    const res=await fetch('/.netlify/functions/chat',{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({message, mode})
+    });
+    const data=await res.json();
+    typing.remove();
+    botBubble(data.reply || "Sorry, I couldn't get an answer just now. Please try again.");
+  }catch(e){
+    typing.remove();
+    botBubble("I couldn't reach the agent. Check your internet connection and try again.");
+  }finally{
+    send.disabled=false;
+  }
+}
+
+aud.addEventListener('click',e=>{
+  const b=e.target.closest('.aud');if(!b)return;
+  mode=b.dataset.mode;
+  [...aud.children].forEach(c=>c.classList.toggle('active',c===b));
+  document.body.classList.toggle('large', mode==='senior');
+  greet();
+});
+
+chips.addEventListener('click',e=>{
+  const b=e.target.closest('.chip');if(!b)return;
+  ask(CHIP_TEXT[b.dataset.key]);
+});
+function sendField(){const t=field.value.trim();if(!t)return;field.value='';ask(t);}
+send.addEventListener('click',sendField);
+field.addEventListener('keydown',e=>{if(e.key==='Enter')sendField();});
+
+greet();
+
+if("serviceWorker" in navigator){navigator.serviceWorker.register("./service-worker.js");}
+</script>
+</body>
+</html>
