@@ -1,5 +1,3 @@
-Unhumanized 
-
 // netlify/functions/chat-plain.js
 // Cyber Sidekick agent, UN-HUMANIZED baseline version for A/B comparison.
 // Same CAFC knowledge base and safety guardrails as the humanized version.
