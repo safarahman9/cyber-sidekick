@@ -63,6 +63,9 @@
   .send:hover{background:#2c2c44;}
   .send:disabled{opacity:.5;cursor:default;}
 
+  .modebar{font-size:12px;color:var(--muted);margin:10px 0 0;text-align:center;}
+  .modebar b{color:var(--accent);font-weight:600;}
+
   footer{font-size:12.5px;color:var(--muted);line-height:1.6;padding:24px 2px 48px;}
 
   @media (max-width:520px){h1{font-size:28px;}.intro p{font-size:16.5px;}}
@@ -114,6 +117,8 @@
     </div>
   </div>
 
+  <div class="modebar" id="modebar"></div>
+
   <footer>
     A friendly AI helper, never a real person posing as one. Report scams to the Canadian Anti-Fraud Centre: 1-888-495-8501 / reportcyberandfraud.canada.ca
   </footer>
@@ -133,6 +138,12 @@ const CHIP_TEXT = {
   etransfer:"I got an email: \"Your Interac e-Transfer of $750 is pending. Click to deposit before it expires.\" I wasn't expecting any money."
 };
 
+// Endpoint toggle for the A/B demo.
+// Default URL  -> humanized agent  (/.netlify/functions/chat)
+// Add ?plain=1 -> baseline agent   (/.netlify/functions/chat-plain)
+const USE_PLAIN = new URLSearchParams(location.search).has('plain');
+const ENDPOINT = USE_PLAIN ? '/.netlify/functions/chat-plain' : '/.netlify/functions/chat';
+
 let mode = "me";
 
 const chat=document.getElementById('chat');
@@ -140,7 +151,13 @@ const chips=document.getElementById('chips');
 const aud=document.getElementById('aud');
 const field=document.getElementById('field');
 const send=document.getElementById('send');
+const modebar=document.getElementById('modebar');
 const reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+// Small on-screen label so you always know which version is live during the demo.
+modebar.innerHTML = USE_PLAIN
+  ? 'Running: <b>baseline (un-humanized)</b> version'
+  : 'Running: <b>humanized</b> version';
 
 function el(cls,html){const d=document.createElement('div');d.className=cls;d.innerHTML=html;return d;}
 function scroll(){chat.scrollTop=chat.scrollHeight;}
@@ -182,7 +199,7 @@ async function ask(message){
   const typing=el('typing','<i></i><i></i><i></i>');
   chat.appendChild(typing);scroll();
   try{
-    const res=await fetch('/.netlify/functions/chat',{
+    const res=await fetch(ENDPOINT,{
       method:'POST',
       headers:{'content-type':'application/json'},
       body:JSON.stringify({message, mode})
