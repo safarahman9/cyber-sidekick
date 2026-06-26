@@ -14,6 +14,7 @@
     --bg:#FBFAF8; --ink:#1A1A2B; --ink-soft:#55556A; --muted:#9A9AAB;
     --line:#ECEAE5; --accent:#3F3D9E; --card:#FFFFFF;
     --msg:15.5px;
+    --r-scam:#C5221F; --r-likely:#B26A00; --r-safe:#1E7A3D; --r-unsure:#6B6B7B;
   }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
@@ -56,15 +57,48 @@
   .chips{display:flex;flex-direction:column;gap:7px;margin-bottom:11px;}
   .chip{font-size:13.5px;color:var(--ink-soft);background:transparent;border:1px solid var(--line);padding:9px 13px;border-radius:10px;cursor:pointer;text-align:left;transition:.15s;font-family:inherit;}
   .chip:hover{border-color:var(--accent);color:var(--ink);}
-  .input-row{display:flex;gap:8px;}
-  .input-row input{flex:1;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:11px 13px;font-size:14.5px;font-family:inherit;color:var(--ink);}
-  .input-row input:focus{outline:none;border-color:var(--accent);}
-  .send{background:var(--ink);color:#fff;border:none;border-radius:10px;padding:0 16px;font-weight:500;font-size:14.5px;cursor:pointer;font-family:inherit;}
+
+  .attachments{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;}
+  .attachments:empty{display:none;}
+  .att{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-soft);background:var(--bg);border:1px solid var(--line);padding:5px 8px 5px 5px;border-radius:8px;}
+  .att img{width:26px;height:26px;object-fit:cover;border-radius:5px;display:block;}
+  .att .ic{width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:5px;background:#ECEBF6;color:var(--accent);font-size:13px;}
+  .att .x{cursor:pointer;border:none;background:none;color:var(--muted);font-size:15px;line-height:1;padding:0 2px;font-family:inherit;}
+  .att .x:hover{color:var(--r-scam);}
+
+  .input-row{display:flex;gap:8px;align-items:center;}
+  .iconbtn{flex:none;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);background:var(--bg);border-radius:10px;cursor:pointer;color:var(--ink-soft);font-family:inherit;}
+  .iconbtn:hover{border-color:var(--accent);color:var(--accent);}
+  .input-row input[type=text]{flex:1;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:11px 13px;font-size:14.5px;font-family:inherit;color:var(--ink);}
+  .input-row input[type=text]:focus{outline:none;border-color:var(--accent);}
+  .send{background:var(--ink);color:#fff;border:none;border-radius:10px;padding:0 16px;font-weight:500;font-size:14.5px;cursor:pointer;font-family:inherit;height:42px;}
   .send:hover{background:#2c2c44;}
   .send:disabled{opacity:.5;cursor:default;}
 
   .modebar{font-size:12px;color:var(--muted);margin:10px 0 0;text-align:center;}
   .modebar b{color:var(--accent);font-weight:600;}
+
+  /* Risk diary */
+  .diary{margin:22px 0 0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;}
+  .diary[hidden]{display:none;}
+  .diary-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px;}
+  .diary-head h2{font-family:'Newsreader',serif;font-weight:500;font-size:18px;margin:0;}
+  .diary-clear{font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:inherit;}
+  .diary-clear:hover{color:var(--r-scam);}
+  .diary-sum{font-size:13.5px;color:var(--ink-soft);margin:0 0 12px;}
+  .thermo{display:flex;height:12px;border-radius:999px;overflow:hidden;background:#F0F0F3;margin-bottom:6px;}
+  .thermo span{display:block;height:100%;}
+  .thermo .s-scam{background:var(--r-scam);} .thermo .s-likely{background:var(--r-likely);}
+  .thermo .s-safe{background:var(--r-safe);} .thermo .s-unsure{background:var(--r-unsure);}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--ink-soft);margin-bottom:14px;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .legend i{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .recent{display:flex;flex-direction:column;gap:9px;}
+  .entry{display:flex;align-items:flex-start;gap:9px;font-size:13px;}
+  .entry .edot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;}
+  .entry .etext{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .entry .ewhen{color:var(--muted);font-size:11.5px;margin-left:auto;flex:none;}
+  .diary-note{font-size:11.5px;color:var(--muted);margin:12px 0 0;}
 
   footer{font-size:12.5px;color:var(--muted);line-height:1.6;padding:24px 2px 48px;}
 
@@ -89,7 +123,7 @@
 
   <section class="intro">
     <h1>Got a text, email, or call that feels off?</h1>
-    <p>Paste it below. I'll tell you straight if it's a scam, and exactly what to do next.</p>
+    <p>Paste it below, or add a screenshot. I'll tell you straight if it's a scam, and exactly what to do next.</p>
   </section>
 
   <div class="audience">
@@ -110,7 +144,12 @@
         <button class="chip" data-key="grandparent">"My grandson's in jail and needs gift cards"</button>
         <button class="chip" data-key="etransfer">"Your Interac e-Transfer of $750 is pending"</button>
       </div>
+      <div class="attachments" id="attachments"></div>
       <div class="input-row">
+        <button class="iconbtn" id="attach" title="Add a screenshot or file" aria-label="Add a screenshot or file">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.05 12.2 20.2a5 5 0 0 1-7.1-7.1l9.2-9.1a3.3 3.3 0 0 1 4.7 4.7l-9.2 9.1a1.7 1.7 0 0 1-2.4-2.4l8.5-8.4"/></svg>
+        </button>
+        <input id="file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf" multiple hidden>
         <input id="field" type="text" placeholder="Or paste your own message..." aria-label="Paste a suspicious message">
         <button class="send" id="send">Send</button>
       </div>
@@ -119,6 +158,23 @@
 
   <div class="modebar" id="modebar"></div>
 
+  <section class="diary" id="diary" hidden>
+    <div class="diary-head">
+      <h2>Your risk diary</h2>
+      <button class="diary-clear" id="diaryClear">Clear</button>
+    </div>
+    <p class="diary-sum" id="diarySum"></p>
+    <div class="thermo" id="thermo"></div>
+    <div class="legend">
+      <span><i style="background:var(--r-scam)"></i>Scam</span>
+      <span><i style="background:var(--r-likely)"></i>Be careful</span>
+      <span><i style="background:var(--r-safe)"></i>Looks safe</span>
+      <span><i style="background:var(--r-unsure)"></i>Unsure</span>
+    </div>
+    <div class="recent" id="recent"></div>
+    <p class="diary-note">Saved only on this device, so you can see your week at a glance. Nothing here is sent anywhere.</p>
+  </section>
+
   <footer>
     A friendly AI helper, never a real person posing as one. Report scams to the Canadian Anti-Fraud Centre: 1-888-495-8501 / reportcyberandfraud.canada.ca
   </footer>
@@ -126,10 +182,10 @@
 
 <script>
 const GREET = {
-  me:"Hi, I'm Cyber Sidekick, an AI helper for spotting scams. I'm not a real person, but I'm here whenever something feels off. Tap an example, or paste a message.",
-  senior:"Hello. I'm Cyber Sidekick, a friendly helper for checking if something is a scam. I am not a real person, just a helpful program. Take your time, and tap an example or paste the message.",
-  youth:"Hey, I'm Cyber Sidekick, an AI that helps you spot scams. Not a real person, just here to help. Tap one of these or paste whatever looks sketchy.",
-  educator:"Hi, I'm Cyber Sidekick, an AI helper. I am not a real person. I'll break each scam down so you can show students how to spot one. Tap an example or paste a message."
+  me:"Hi, I'm Cyber Sidekick, an AI helper for spotting scams. I'm not a real person, but I'm here whenever something feels off. Tap an example, paste a message, or add a screenshot.",
+  senior:"Hello. I'm Cyber Sidekick, a friendly helper for checking if something is a scam. I am not a real person, just a helpful program. Take your time. You can tap an example, paste the message, or add a photo of it.",
+  youth:"Hey, I'm Cyber Sidekick, an AI that helps you spot scams. Not a real person, just here to help. Tap one of these, paste whatever looks sketchy, or drop in a screenshot.",
+  educator:"Hi, I'm Cyber Sidekick, an AI helper. I am not a real person. I'll break each scam down so you can show students how to spot one. Tap an example, paste a message, or add a screenshot."
 };
 
 const CHIP_TEXT = {
@@ -144,7 +200,12 @@ const CHIP_TEXT = {
 const USE_PLAIN = new URLSearchParams(location.search).has('plain');
 const ENDPOINT = USE_PLAIN ? '/.netlify/functions/chat-plain' : '/.netlify/functions/chat';
 
+const LOG_KEY = 'cs_risklog_v1';
+const MAX_TURNS = 16; // how much conversation history we send back each turn
+
 let mode = "me";
+let messages = [];   // running conversation in Anthropic format
+let pending = [];    // attachments queued for the next send: {block, name, kind, url}
 
 const chat=document.getElementById('chat');
 const chips=document.getElementById('chips');
@@ -152,9 +213,15 @@ const aud=document.getElementById('aud');
 const field=document.getElementById('field');
 const send=document.getElementById('send');
 const modebar=document.getElementById('modebar');
-const reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+const attachBtn=document.getElementById('attach');
+const fileInput=document.getElementById('file');
+const attachWrap=document.getElementById('attachments');
+const diary=document.getElementById('diary');
+const diarySum=document.getElementById('diarySum');
+const thermo=document.getElementById('thermo');
+const recent=document.getElementById('recent');
+const diaryClear=document.getElementById('diaryClear');
 
-// Small on-screen label so you always know which version is live during the demo.
 modebar.innerHTML = USE_PLAIN
   ? 'Running: <b>baseline (un-humanized)</b> version'
   : 'Running: <b>humanized</b> version';
@@ -163,6 +230,7 @@ function el(cls,html){const d=document.createElement('div');d.className=cls;d.in
 function scroll(){chat.scrollTop=chat.scrollHeight;}
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
+/* ---------- messages ---------- */
 function addListen(bubble, plainText){
   const btn=document.createElement('button');
   btn.className='listen';
@@ -181,20 +249,97 @@ function addListen(bubble, plainText){
 }
 
 function botBubble(text){
-  const b=el('msg bot', esc(text));
+  const b=document.createElement('div');
+  b.className='msg bot';
+  const body=document.createElement('div');
+  body.innerHTML=esc(text);
+  b.appendChild(body);
   addListen(b, text);
   chat.appendChild(b);scroll();
 }
-function userMsg(t){chat.appendChild(el('msg user', esc(t)));scroll();}
 
-function greet(){
-  chat.innerHTML='';
-  speechSynthesis.cancel();
-  botBubble(GREET[mode]);
+function userMsg(text, atts){
+  let html=esc(text);
+  (atts||[]).forEach(a=>{ html += (html?'\n':'') + '\uD83D\uDCCE ' + esc(a.name); });
+  chat.appendChild(el('msg user', html));scroll();
 }
 
-async function ask(message){
-  userMsg(message);
+/* ---------- attachments ---------- */
+function fileToAtt(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      const b64=String(r.result).split(',')[1];
+      if(file.type==='application/pdf'){
+        resolve({kind:'file', name:file.name, url:null,
+          block:{type:'document', source:{type:'base64', media_type:'application/pdf', data:b64}}});
+      }else if(file.type.indexOf('image/')===0){
+        resolve({kind:'image', name:file.name, url:r.result,
+          block:{type:'image', source:{type:'base64', media_type:file.type, data:b64}}});
+      }else{ reject(new Error('unsupported')); }
+    };
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
+}
+
+function renderPending(){
+  attachWrap.innerHTML='';
+  pending.forEach((a,i)=>{
+    const chip=document.createElement('div');
+    chip.className='att';
+    chip.innerHTML = a.kind==='image' && a.url
+      ? '<img src="'+a.url+'" alt="">'
+      : '<span class="ic">PDF</span>';
+    const name=document.createElement('span');
+    name.textContent=a.name.length>22 ? a.name.slice(0,20)+'…' : a.name;
+    const x=document.createElement('button');
+    x.className='x'; x.innerHTML='&times;'; x.title='Remove';
+    x.addEventListener('click',()=>{pending.splice(i,1);renderPending();});
+    chip.appendChild(name); chip.appendChild(x);
+    attachWrap.appendChild(chip);
+  });
+}
+
+attachBtn.addEventListener('click',()=>fileInput.click());
+fileInput.addEventListener('change', async ()=>{
+  const files=[...fileInput.files];
+  fileInput.value='';
+  for(const f of files){
+    try{ pending.push(await fileToAtt(f)); }
+    catch(e){ /* skip unsupported */ }
+  }
+  renderPending();
+});
+
+/* ---------- sending ---------- */
+// Build the outbound history. To save tokens, replace attachments in older
+// turns with a short text note, and only send the most recent turns.
+function outbound(){
+  const trimmed = messages.slice(-MAX_TURNS);
+  return trimmed.map((m,i)=>{
+    const isLast = i===trimmed.length-1;
+    if(Array.isArray(m.content)){
+      if(isLast) return m; // keep full blocks (images/files) only on the newest message
+      const txt = m.content.filter(b=>b.type==='text').map(b=>b.text).join(' ').trim();
+      const extra = m.content.some(b=>b.type==='image') ? ' [shared an image]' :
+                    m.content.some(b=>b.type==='document') ? ' [shared a file]' : '';
+      return {role:m.role, content:(txt+extra).trim() || '[shared an attachment]'};
+    }
+    return m;
+  });
+}
+
+async function ask(text, atts){
+  const blocks=[];
+  (atts||[]).forEach(a=>blocks.push(a.block));
+  const typed = (text||'').trim() || (atts&&atts.length ? "Can you check this for me?" : "");
+  if(typed) blocks.push({type:'text', text:typed});
+  const content = (blocks.length===1 && blocks[0].type==='text') ? typed : blocks;
+
+  userMsg(text||'', atts);
+  messages.push({role:'user', content});
+
   send.disabled=true;
   const typing=el('typing','<i></i><i></i><i></i>');
   chat.appendChild(typing);scroll();
@@ -202,17 +347,108 @@ async function ask(message){
     const res=await fetch(ENDPOINT,{
       method:'POST',
       headers:{'content-type':'application/json'},
-      body:JSON.stringify({message, mode})
+      body:JSON.stringify({messages: outbound(), mode})
     });
     const data=await res.json();
     typing.remove();
-    botBubble(data.reply || "Sorry, I couldn't get an answer just now. Please try again.");
+    const reply = data.reply || "Sorry, I couldn't get an answer just now. Please try again.";
+    const risk = data.risk || 'unsure';
+    messages.push({role:'assistant', content: reply});
+    botBubble(reply);
+    logCheck(typed || (atts&&atts.length?'(shared a screenshot)':''), risk);
   }catch(e){
     typing.remove();
     botBubble("I couldn't reach the agent. Check your internet connection and try again.");
   }finally{
     send.disabled=false;
   }
+}
+
+function sendCurrent(textOverride){
+  const text = (textOverride!=null ? textOverride : field.value).trim();
+  if(!text && pending.length===0) return;
+  if(textOverride==null) field.value='';
+  const atts = pending.slice();
+  pending=[]; renderPending();
+  ask(text, atts);
+}
+
+/* ---------- risk diary (logging) ---------- */
+function loadLog(){
+  try{ return JSON.parse(localStorage.getItem(LOG_KEY)) || []; }
+  catch(e){ return []; }
+}
+function saveLog(log){
+  try{ localStorage.setItem(LOG_KEY, JSON.stringify(log.slice(-200))); }catch(e){}
+}
+function logCheck(snippet, risk){
+  const log=loadLog();
+  log.push({ t:Date.now(), mode, risk, text:(snippet||'').slice(0,90) });
+  saveLog(log);
+  renderDiary();
+}
+function whenLabel(ts){
+  const d=new Date(ts), now=new Date();
+  const sameDay=d.toDateString()===now.toDateString();
+  if(sameDay) return d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+  return d.toLocaleDateString([], {month:'short', day:'numeric'});
+}
+function renderDiary(){
+  const log=loadLog();
+  if(log.length===0){ diary.hidden=true; return; }
+  diary.hidden=false;
+
+  const counts={scam:0, likely:0, safe:0, unsure:0};
+  log.forEach(e=>{ counts[e.risk]=(counts[e.risk]||0)+1; });
+  const total=log.length;
+  const weekAgo=Date.now()-7*24*60*60*1000;
+  const week=log.filter(e=>e.t>=weekAgo).length;
+
+  const flagged=counts.scam+counts.likely;
+  diarySum.textContent =
+    'You\u2019ve checked ' + total + (total===1?' message':' messages') +
+    ' (' + week + ' in the last 7 days). ' +
+    (flagged===0
+      ? 'None turned out to be clear scams so far.'
+      : flagged + (flagged===1?' was':' were') + ' a scam or worth being careful with.');
+
+  thermo.innerHTML='';
+  ['scam','likely','safe','unsure'].forEach(k=>{
+    if(!counts[k]) return;
+    const s=document.createElement('span');
+    s.className='s-'+k;
+    s.style.width=(counts[k]/total*100)+'%';
+    thermo.appendChild(s);
+  });
+
+  recent.innerHTML='';
+  const colors={scam:'var(--r-scam)',likely:'var(--r-likely)',safe:'var(--r-safe)',unsure:'var(--r-unsure)'};
+  log.slice(-6).reverse().forEach(e=>{
+    const row=document.createElement('div');
+    row.className='entry';
+    const dot=document.createElement('span');
+    dot.className='edot'; dot.style.background=colors[e.risk]||colors.unsure;
+    const t=document.createElement('span');
+    t.className='etext'; t.textContent=e.text || '(screenshot)';
+    const w=document.createElement('span');
+    w.className='ewhen'; w.textContent=whenLabel(e.t);
+    row.appendChild(dot); row.appendChild(t); row.appendChild(w);
+    recent.appendChild(row);
+  });
+}
+diaryClear.addEventListener('click',()=>{
+  if(confirm('Clear your risk diary on this device?')){
+    saveLog([]); renderDiary();
+  }
+});
+
+/* ---------- greet / mode ---------- */
+function greet(){
+  chat.innerHTML='';
+  speechSynthesis.cancel();
+  messages=[];           // new audience means a fresh conversation and system prompt
+  pending=[]; renderPending();
+  botBubble(GREET[mode]); // greeting is not logged
 }
 
 aud.addEventListener('click',e=>{
@@ -225,13 +461,13 @@ aud.addEventListener('click',e=>{
 
 chips.addEventListener('click',e=>{
   const b=e.target.closest('.chip');if(!b)return;
-  ask(CHIP_TEXT[b.dataset.key]);
+  sendCurrent(CHIP_TEXT[b.dataset.key]);
 });
-function sendField(){const t=field.value.trim();if(!t)return;field.value='';ask(t);}
-send.addEventListener('click',sendField);
-field.addEventListener('keydown',e=>{if(e.key==='Enter')sendField();});
+send.addEventListener('click',()=>sendCurrent());
+field.addEventListener('keydown',e=>{if(e.key==='Enter')sendCurrent();});
 
 greet();
+renderDiary();
 
 if("serviceWorker" in navigator){navigator.serviceWorker.register("./service-worker.js");}
 </script>
