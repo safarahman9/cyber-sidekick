@@ -83,8 +83,10 @@
   .diary[hidden]{display:none;}
   .diary-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px;}
   .diary-head h2{font-family:'Newsreader',serif;font-weight:500;font-size:18px;margin:0;}
-  .diary-clear{font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:inherit;}
-  .diary-clear:hover{color:var(--r-scam);}
+  .diary-actions{display:flex;gap:14px;align-items:center;}
+  .diary-act{font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:inherit;padding:0;}
+  .diary-act.dl:hover{color:var(--accent);}
+  .diary-act.clear:hover{color:var(--r-scam);}
   .diary-sum{font-size:13.5px;color:var(--ink-soft);margin:0 0 12px;}
   .thermo{display:flex;height:12px;border-radius:999px;overflow:hidden;background:#F0F0F3;margin-bottom:6px;}
   .thermo span{display:block;height:100%;}
@@ -161,7 +163,10 @@
   <section class="diary" id="diary" hidden>
     <div class="diary-head">
       <h2>Your risk diary</h2>
-      <button class="diary-clear" id="diaryClear">Clear</button>
+      <div class="diary-actions">
+        <button class="diary-act dl" id="diaryDownload">Download CSV</button>
+        <button class="diary-act clear" id="diaryClear">Clear</button>
+      </div>
     </div>
     <p class="diary-sum" id="diarySum"></p>
     <div class="thermo" id="thermo"></div>
@@ -221,6 +226,7 @@ const diarySum=document.getElementById('diarySum');
 const thermo=document.getElementById('thermo');
 const recent=document.getElementById('recent');
 const diaryClear=document.getElementById('diaryClear');
+const diaryDownload=document.getElementById('diaryDownload');
 
 modebar.innerHTML = USE_PLAIN
   ? 'Running: <b>baseline (un-humanized)</b> version'
@@ -441,6 +447,32 @@ diaryClear.addEventListener('click',()=>{
     saveLog([]); renderDiary();
   }
 });
+
+// Export the local log as a CSV file (opens in Excel / Google Sheets).
+function csvCell(v){
+  v = (v==null ? '' : String(v));
+  if(/[",\n\r]/.test(v)) v = '"' + v.replace(/"/g,'""') + '"';
+  return v;
+}
+function downloadLog(){
+  const log=loadLog();
+  if(log.length===0) return;
+  const rows=[['Date','Time','Timestamp (ISO)','Audience','Risk','Snippet']];
+  log.forEach(e=>{
+    const d=new Date(e.t);
+    rows.push([ d.toLocaleDateString(), d.toLocaleTimeString(), d.toISOString(),
+                e.mode||'', e.risk||'', e.text||'' ]);
+  });
+  const csv='\uFEFF'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='cyber-sidekick-log-'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+diaryDownload.addEventListener('click', downloadLog);
 
 /* ---------- greet / mode ---------- */
 function greet(){
