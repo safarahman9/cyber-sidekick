@@ -44,6 +44,10 @@
   .bot{align-self:flex-start;color:var(--ink);white-space:pre-wrap;}
   .user{align-self:flex-end;background:var(--ink);color:#fff;padding:11px 15px;border-radius:14px;border-bottom-right-radius:4px;white-space:pre-wrap;}
 
+  .checked{margin-top:9px;font-size:12px;color:var(--muted);line-height:1.45;}
+  .checked b{font-weight:600;color:var(--ink-soft);}
+  .checked svg{vertical-align:-2px;margin-right:4px;}
+
   .listen{margin-top:10px;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);background:transparent;border:1px solid var(--line);padding:5px 11px;border-radius:999px;cursor:pointer;font-family:inherit;}
   .listen:hover{border-color:var(--accent);color:var(--accent);}
   .listen.playing{background:var(--accent);border-color:var(--accent);color:#fff;}
@@ -254,12 +258,19 @@ function addListen(bubble, plainText){
   bubble.appendChild(btn);
 }
 
-function botBubble(text){
+function botBubble(text, sources){
   const b=document.createElement('div');
   b.className='msg bot';
   const body=document.createElement('div');
   body.innerHTML=esc(text);
   b.appendChild(body);
+  if(sources && sources.length){
+    const c=document.createElement('div');
+    c.className='checked';
+    c.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><b>Sources checked:</b> ';
+    c.appendChild(document.createTextNode(sources.join(', ')));
+    b.appendChild(c);
+  }
   addListen(b, text);
   chat.appendChild(b);scroll();
 }
@@ -359,9 +370,12 @@ async function ask(text, atts){
     typing.remove();
     const reply = data.reply || "Sorry, I couldn't get an answer just now. Please try again.";
     const risk = data.risk || 'unsure';
+    const sources = Array.isArray(data.sources) ? data.sources : [];
     messages.push({role:'assistant', content: reply});
-    botBubble(reply);
-    logCheck(typed || (atts&&atts.length?'(shared a screenshot)':''), risk);
+    botBubble(reply, sources);
+    logCheck(typed || (atts&&atts.length?'(shared a screenshot)':''), risk, {
+      searchUsed: !!data.searchUsed, searchCount: data.searchCount||0, sources
+    });
   }catch(e){
     typing.remove();
     botBubble("I couldn't reach the agent. Check your internet connection and try again.");
@@ -387,9 +401,15 @@ function loadLog(){
 function saveLog(log){
   try{ localStorage.setItem(LOG_KEY, JSON.stringify(log.slice(-200))); }catch(e){}
 }
-function logCheck(snippet, risk){
+function logCheck(snippet, risk, meta){
+  meta = meta || {};
   const log=loadLog();
-  log.push({ t:Date.now(), mode, risk, text:(snippet||'').slice(0,90) });
+  log.push({
+    t:Date.now(), mode, risk, text:(snippet||'').slice(0,90),
+    search: !!meta.searchUsed,
+    searchCount: meta.searchCount || 0,
+    sources: (meta.sources || []).join('; ')
+  });
   saveLog(log);
   renderDiary();
 }
@@ -457,11 +477,11 @@ function csvCell(v){
 function downloadLog(){
   const log=loadLog();
   if(log.length===0) return;
-  const rows=[['Date','Time','Timestamp (ISO)','Audience','Risk','Snippet']];
+  const rows=[['Date','Time','Timestamp (ISO)','Audience','Risk','Search used','# searches','Sources','Snippet']];
   log.forEach(e=>{
     const d=new Date(e.t);
     rows.push([ d.toLocaleDateString(), d.toLocaleTimeString(), d.toISOString(),
-                e.mode||'', e.risk||'', e.text||'' ]);
+                e.mode||'', e.risk||'', e.search?'yes':'no', e.searchCount||0, e.sources||'', e.text||'' ]);
   });
   const csv='\uFEFF'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
