@@ -164,8 +164,30 @@ exports.handler = async (event) => {
       return { statusCode: 502, body: JSON.stringify({ error: "Upstream error" }) };
     }
 
+    const blocks = data.content || [];
+
+    // Surface which web sources (if any) the model actually used, for the
+    // visible "Sources checked" line and the risk-diary log.
+    let searchCount = 0;
+    const sources = [];
+    for (const b of blocks) {
+      if (b.type === "web_search_tool_result") {
+        searchCount++;
+        const items = Array.isArray(b.content) ? b.content : [];
+        for (const r of items) {
+          if (r && r.url) {
+            try {
+              const host = new URL(r.url).hostname.replace(/^www\./, "");
+              if (host && sources.indexOf(host) === -1) sources.push(host);
+            } catch (e) { /* ignore malformed url */ }
+          }
+        }
+      }
+    }
+    const searchUsed = searchCount > 0;
+
     // With web search the reply may contain tool-use blocks; keep only the text blocks.
-    let reply = (data.content || [])
+    let reply = blocks
       .filter((b) => b.type === "text")
       .map((b) => b.text || "")
       .join("\n")
@@ -182,7 +204,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ reply, risk })
+      body: JSON.stringify({ reply, risk, searchUsed, searchCount, sources: sources.slice(0, 8) })
     };
   } catch (e) {
     return { statusCode: 500, body: JSON.stringify({ error: "Server error" }) };
