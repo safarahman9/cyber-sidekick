@@ -152,6 +152,7 @@
   .modal-q{align-self:flex-end;max-width:88%;background:var(--ink);color:#fff;padding:9px 13px;border-radius:12px;border-bottom-right-radius:4px;font-size:13.5px;white-space:pre-wrap;}
   .modal-a{align-self:flex-start;max-width:92%;background:var(--bg);border:1px solid var(--line);padding:9px 13px;border-radius:12px;border-bottom-left-radius:4px;font-size:13.5px;white-space:pre-wrap;}
   .modal-thumb{max-width:180px;border-radius:10px;border:1px solid var(--line);display:block;align-self:flex-end;}
+  .modal-thumb-standalone{max-width:260px;align-self:flex-start;margin-bottom:16px;}
   .modal-site-chip{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:14px;}
   .modal-site-chip .shost{font-weight:600;font-size:13.5px;}
   .modal-site-chip a{color:var(--accent);font-size:12px;text-decoration:none;word-break:break-all;}
@@ -780,8 +781,12 @@ function openDiaryModal(entry){
       '<a href="'+entry.siteUrl+'" target="_blank" rel="noopener noreferrer">Open site</a></div></div>';
   }
 
+  if(entry.thumb){
+    html += '<div class="modal-h">Screenshot scanned</div>'+
+      '<img class="modal-thumb modal-thumb-standalone" src="'+entry.thumb+'" alt="Screenshot that was scanned">';
+  }
+
   html += '<div class="modal-h">Full discussion</div><div class="modal-thread"><div class="modal-turn">';
-  if(entry.thumb) html += '<img class="modal-thumb" src="'+entry.thumb+'" alt="Screenshot that was scanned">';
   if(entry.q) html += '<div class="modal-q">'+esc(entry.q)+'</div>';
   if(entry.a) html += '<div class="modal-a">'+esc(entry.a)+'</div>';
   html += '</div></div>';
