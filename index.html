@@ -518,8 +518,38 @@ chips.addEventListener('click',e=>{
 send.addEventListener('click',()=>sendCurrent());
 field.addEventListener('keydown',e=>{if(e.key==='Enter')sendCurrent();});
 
+// Paste-to-scan: a pasted screenshot (e.g. Win+Shift+S / Cmd+Shift+4 copied to
+// clipboard) is queued as an attachment the same way a file-picker upload is.
+// Pasted plain text/URLs fall through to the normal input behavior.
+field.addEventListener('paste', async (e)=>{
+  const items = e.clipboardData && e.clipboardData.items;
+  if(!items) return;
+  for(const item of items){
+    if(item.type.indexOf('image/')===0){
+      e.preventDefault();
+      const file = item.getAsFile();
+      try{
+        const att = await fileToAtt(file);
+        pending.push(att);
+        renderPending();
+      }catch(err){ /* unsupported paste type, ignore */ }
+      return;
+    }
+  }
+});
+
 greet();
 renderDiary();
+
+// Handle content shared in via the OS share sheet (share_target in manifest.json).
+// Installed PWAs receive shared links/text/titles as query params on load.
+const shareParams = new URLSearchParams(location.search);
+const shared = shareParams.get('url') || shareParams.get('text') || shareParams.get('title');
+if (shared) {
+  sendCurrent(shared);
+  // clean the URL so a page refresh doesn't silently re-send the same scan
+  history.replaceState(null, '', location.pathname);
+}
 
 if("serviceWorker" in navigator){navigator.serviceWorker.register("./service-worker.js");}
 </script>
