@@ -48,6 +48,12 @@
   .checked b{font-weight:600;color:var(--ink-soft);}
   .checked svg{vertical-align:-2px;margin-right:4px;}
 
+  .factors{margin-top:11px;display:flex;flex-direction:column;gap:6px;padding:11px 13px;background:var(--bg);border:1px solid var(--line);border-radius:10px;}
+  .factor-row{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;line-height:1.5;}
+  .fdot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;}
+  .ftext{color:var(--ink-soft);}
+  .ftext b{color:var(--ink);font-weight:600;}
+
   .listen{margin-top:10px;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);background:transparent;border:1px solid var(--line);padding:5px 11px;border-radius:999px;cursor:pointer;font-family:inherit;}
   .listen:hover{border-color:var(--accent);color:var(--accent);}
   .listen.playing{background:var(--accent);border-color:var(--accent);color:#fff;}
@@ -79,32 +85,37 @@
   .send:hover{background:#2c2c44;}
   .send:disabled{opacity:.5;cursor:default;}
 
-  .modebar{font-size:12px;color:var(--muted);margin:10px 0 0;text-align:center;}
-  .modebar b{color:var(--accent);font-weight:600;}
+  .toolbar{display:flex;gap:8px;justify-content:center;margin:16px 0 0;}
+  .tool-link{font-size:13px;color:var(--ink-soft);background:var(--card);border:1px solid var(--line);padding:8px 15px;border-radius:999px;text-decoration:none;transition:.15s;}
+  .tool-link:hover{border-color:var(--accent);color:var(--accent);}
 
-  /* Risk diary */
-  .diary{margin:22px 0 0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;}
+  /* Risk diary: intentionally distinct dark-purple treatment, separate visual zone from the rest of the page */
+  .diary{
+    --diary-bg:#231F5C; --diary-bg2:#2E2878; --diary-ink:#F2F1FB; --diary-ink-soft:#C6C3E8; --diary-line:rgba(255,255,255,.14);
+    margin:28px 0 0;background:linear-gradient(160deg,var(--diary-bg),var(--diary-bg2));color:var(--diary-ink);
+    border:1px solid var(--diary-line);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(35,31,92,.25);
+  }
   .diary[hidden]{display:none;}
   .diary-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px;}
-  .diary-head h2{font-family:'Newsreader',serif;font-weight:500;font-size:18px;margin:0;}
+  .diary-head h2{font-family:'Newsreader',serif;font-weight:500;font-size:18px;margin:0;color:var(--diary-ink);}
   .diary-actions{display:flex;gap:14px;align-items:center;}
-  .diary-act{font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:inherit;padding:0;}
-  .diary-act.dl:hover{color:var(--accent);}
-  .diary-act.clear:hover{color:var(--r-scam);}
-  .diary-sum{font-size:13.5px;color:var(--ink-soft);margin:0 0 12px;}
-  .thermo{display:flex;height:12px;border-radius:999px;overflow:hidden;background:#F0F0F3;margin-bottom:6px;}
+  .diary-act{font-size:12px;color:var(--diary-ink-soft);background:none;border:none;cursor:pointer;font-family:inherit;padding:0;}
+  .diary-act.dl:hover{color:#fff;}
+  .diary-act.clear:hover{color:#ff8a8a;}
+  .diary-sum{font-size:13.5px;color:var(--diary-ink-soft);margin:0 0 12px;}
+  .thermo{display:flex;height:12px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.12);margin-bottom:6px;}
   .thermo span{display:block;height:100%;}
-  .thermo .s-scam{background:var(--r-scam);} .thermo .s-likely{background:var(--r-likely);}
-  .thermo .s-safe{background:var(--r-safe);} .thermo .s-unsure{background:var(--r-unsure);}
-  .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--ink-soft);margin-bottom:14px;}
+  .thermo .s-scam{background:#FF6B6B;} .thermo .s-likely{background:#FFB74D;}
+  .thermo .s-safe{background:#5CE0A0;} .thermo .s-unsure{background:#A9A5D9;}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--diary-ink-soft);margin-bottom:14px;}
   .legend span{display:inline-flex;align-items:center;gap:5px;}
   .legend i{width:8px;height:8px;border-radius:50%;display:inline-block;}
   .recent{display:flex;flex-direction:column;gap:9px;}
   .entry{display:flex;align-items:flex-start;gap:9px;font-size:13px;}
   .entry .edot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;}
-  .entry .etext{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .entry .ewhen{color:var(--muted);font-size:11.5px;margin-left:auto;flex:none;}
-  .diary-note{font-size:11.5px;color:var(--muted);margin:12px 0 0;}
+  .entry .etext{color:var(--diary-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .entry .ewhen{color:var(--diary-ink-soft);font-size:11.5px;margin-left:auto;flex:none;}
+  .diary-note{font-size:11.5px;color:var(--diary-ink-soft);margin:12px 0 0;}
 
   footer{font-size:12.5px;color:var(--muted);line-height:1.6;padding:24px 2px 48px;}
 
@@ -165,7 +176,9 @@
     </div>
   </div>
 
-  <div class="modebar" id="modebar"></div>
+  <div class="toolbar">
+    <a class="tool-link" href="./sites.html">Visited sites</a>
+  </div>
 
   <section class="diary" id="diary" hidden>
     <div class="diary-head">
@@ -213,6 +226,7 @@ const USE_PLAIN = new URLSearchParams(location.search).has('plain');
 const ENDPOINT = USE_PLAIN ? '/.netlify/functions/chat-plain' : '/.netlify/functions/chat';
 
 const LOG_KEY = 'cs_risklog_v1';
+const SITE_KEY = 'cs_sitelog_v1';
 const MAX_TURNS = 16; // how much conversation history we send back each turn
 
 let mode = "me";
@@ -224,7 +238,6 @@ const chips=document.getElementById('chips');
 const aud=document.getElementById('aud');
 const field=document.getElementById('field');
 const send=document.getElementById('send');
-const modebar=document.getElementById('modebar');
 const attachBtn=document.getElementById('attach');
 const captureBtn=document.getElementById('capture');
 const fileInput=document.getElementById('file');
@@ -235,10 +248,6 @@ const thermo=document.getElementById('thermo');
 const recent=document.getElementById('recent');
 const diaryClear=document.getElementById('diaryClear');
 const diaryDownload=document.getElementById('diaryDownload');
-
-modebar.innerHTML = USE_PLAIN
-  ? 'Running: <b>baseline (un-humanized)</b> version'
-  : 'Running: <b>humanized</b> version';
 
 function el(cls,html){const d=document.createElement('div');d.className=cls;d.innerHTML=html;return d;}
 function scroll(){chat.scrollTop=chat.scrollHeight;}
@@ -262,12 +271,37 @@ function addListen(bubble, plainText){
   bubble.appendChild(btn);
 }
 
-function botBubble(text, sources){
+function botBubble(text, sources, factors){
   const b=document.createElement('div');
   b.className='msg bot';
   const body=document.createElement('div');
   body.innerHTML=esc(text);
   b.appendChild(body);
+  if(factors && factors.length){
+    const order={high:0, medium:1, low:2};
+    const sorted=factors.slice().sort((a,z)=>(order[a.severity]??2)-(order[z.severity]??2));
+    const colors={high:'var(--r-scam)', medium:'var(--r-likely)', low:'var(--r-safe)'};
+    const labels={high:'High risk', medium:'Worth noting', low:'Low risk'};
+    const panel=document.createElement('div');
+    panel.className='factors';
+    sorted.forEach(f=>{
+      const row=document.createElement('div');
+      row.className='factor-row';
+      const dot=document.createElement('span');
+      dot.className='fdot';
+      dot.style.background=colors[f.severity]||colors.low;
+      dot.title=labels[f.severity]||'';
+      const txt=document.createElement('span');
+      txt.className='ftext';
+      const name=document.createElement('b');
+      name.textContent=f.name||'';
+      txt.appendChild(name);
+      if(f.note){ txt.appendChild(document.createTextNode(' — '+f.note)); }
+      row.appendChild(dot); row.appendChild(txt);
+      panel.appendChild(row);
+    });
+    b.appendChild(panel);
+  }
   if(sources && sources.length){
     const c=document.createElement('div');
     c.className='checked';
@@ -395,7 +429,7 @@ function outbound(){
   });
 }
 
-async function ask(text, atts){
+async function ask(text, atts, meta){
   const blocks=[];
   (atts||[]).forEach(a=>blocks.push(a.block));
   const typed = (text||'').trim() || (atts&&atts.length ? "Can you check this for me?" : "");
@@ -419,10 +453,12 @@ async function ask(text, atts){
     const reply = data.reply || "Sorry, I couldn't get an answer just now. Please try again.";
     const risk = data.risk || 'unsure';
     const sources = Array.isArray(data.sources) ? data.sources : [];
+    const factors = Array.isArray(data.factors) ? data.factors : [];
     messages.push({role:'assistant', content: reply});
-    botBubble(reply, sources);
+    botBubble(reply, sources, factors);
     logCheck(typed || (atts&&atts.length?'(shared a screenshot)':''), risk, {
-      searchUsed: !!data.searchUsed, searchCount: data.searchCount||0, sources
+      searchUsed: !!data.searchUsed, searchCount: data.searchCount||0, sources,
+      siteUrl: meta && meta.siteUrl, siteTitle: meta && meta.siteTitle
     });
   }catch(e){
     typing.remove();
@@ -441,13 +477,28 @@ function sendCurrent(textOverride){
   ask(text, atts);
 }
 
-/* ---------- risk diary (logging) ---------- */
+/* ---------- risk diary (inline card, this page) + visited sites (logging only; viewed on sites.html) ---------- */
 function loadLog(){
   try{ return JSON.parse(localStorage.getItem(LOG_KEY)) || []; }
   catch(e){ return []; }
 }
 function saveLog(log){
   try{ localStorage.setItem(LOG_KEY, JSON.stringify(log.slice(-200))); }catch(e){}
+}
+function loadSites(){
+  try{ return JSON.parse(localStorage.getItem(SITE_KEY)) || []; }
+  catch(e){ return []; }
+}
+function saveSites(list){
+  try{ localStorage.setItem(SITE_KEY, JSON.stringify(list.slice(-200))); }catch(e){}
+}
+function logSite(url, title, risk){
+  if(!url) return;
+  let hostname = url;
+  try{ hostname = new URL(url).hostname.replace(/^www\./,''); }catch(e){ /* not a full URL, keep as-is */ }
+  const list = loadSites();
+  list.push({ t:Date.now(), url, hostname, title: title || '', risk: risk || 'unsure' });
+  saveSites(list);
 }
 function logCheck(snippet, risk, meta){
   meta = meta || {};
@@ -459,6 +510,7 @@ function logCheck(snippet, risk, meta){
     sources: (meta.sources || []).join('; ')
   });
   saveLog(log);
+  if(meta.siteUrl) logSite(meta.siteUrl, meta.siteTitle, risk);
   renderDiary();
 }
 function whenLabel(ts){
@@ -496,7 +548,7 @@ function renderDiary(){
   });
 
   recent.innerHTML='';
-  const colors={scam:'var(--r-scam)',likely:'var(--r-likely)',safe:'var(--r-safe)',unsure:'var(--r-unsure)'};
+  const colors={scam:'#FF6B6B',likely:'#FFB74D',safe:'#5CE0A0',unsure:'#A9A5D9'};
   log.slice(-6).reverse().forEach(e=>{
     const row=document.createElement('div');
     row.className='entry';
@@ -516,7 +568,6 @@ diaryClear.addEventListener('click',()=>{
   }
 });
 
-// Export the local log as a CSV file (opens in Excel / Google Sheets).
 function csvCell(v){
   v = (v==null ? '' : String(v));
   if(/[",\n\r]/.test(v)) v = '"' + v.replace(/"/g,'""') + '"';
@@ -617,7 +668,11 @@ renderDiary();
     }
 
     const text = payload.url || payload.text || payload.title || '';
-    if (text || atts.length) ask(text, atts);
+    if (text || atts.length) {
+      // Only log as a "visited site" when a real URL was shared, not a plain text share.
+      const siteUrl = payload.url && /^https?:\/\//i.test(payload.url) ? payload.url : undefined;
+      ask(text, atts, { siteUrl, siteTitle: payload.title });
+    }
 
     await cache.delete('/__shared_payload');
     await cache.delete('/__shared_file');
@@ -651,7 +706,7 @@ if("serviceWorker" in navigator){navigator.serviceWorker.register("./service-wor
     );
   }
 
-  ask(parts.join('\n'), []);
+  ask(parts.join('\n'), [], { siteUrl: scanUrl, siteTitle: scanTitle });
   history.replaceState(null, '', location.pathname);
 })();
 </script>
