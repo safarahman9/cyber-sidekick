@@ -85,19 +85,19 @@
   .send:hover{background:#2c2c44;}
   .send:disabled{opacity:.5;cursor:default;}
 
-  .toolbar{display:flex;gap:8px;justify-content:center;margin:16px 0 0;}
-  .tool-link{font-size:13px;color:var(--ink-soft);background:var(--card);border:1px solid var(--line);padding:8px 15px;border-radius:999px;text-decoration:none;transition:.15s;}
-  .tool-link:hover{border-color:var(--accent);color:var(--accent);}
+  /* Full-bleed technique: breaks a section out of the centered 600px column to span the viewport */
+  .fb{width:100vw;position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw;}
+  .fb-inner{max-width:600px;margin:0 auto;padding:28px 24px;}
+  .fb[hidden]{display:none;}
 
-  /* Risk diary: intentionally distinct dark-purple treatment, separate visual zone from the rest of the page */
+  /* Risk diary: full-width dark-purple block, distinct zone from the rest of the page */
   .diary{
-    --diary-bg:#231F5C; --diary-bg2:#2E2878; --diary-ink:#F2F1FB; --diary-ink-soft:#C6C3E8; --diary-line:rgba(255,255,255,.14);
-    margin:28px 0 0;background:linear-gradient(160deg,var(--diary-bg),var(--diary-bg2));color:var(--diary-ink);
-    border:1px solid var(--diary-line);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(35,31,92,.25);
+    --diary-bg:#231F5C; --diary-bg2:#2E2878; --diary-ink:#F2F1FB; --diary-ink-soft:#C6C3E8;
+    background:linear-gradient(160deg,var(--diary-bg),var(--diary-bg2));color:var(--diary-ink);
+    margin-top:8px;
   }
-  .diary[hidden]{display:none;}
   .diary-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px;}
-  .diary-head h2{font-family:'Newsreader',serif;font-weight:500;font-size:18px;margin:0;color:var(--diary-ink);}
+  .diary-head h2{font-family:'Newsreader',serif;font-weight:500;font-size:19px;margin:0;color:var(--diary-ink);}
   .diary-actions{display:flex;gap:14px;align-items:center;}
   .diary-act{font-size:12px;color:var(--diary-ink-soft);background:none;border:none;cursor:pointer;font-family:inherit;padding:0;}
   .diary-act.dl:hover{color:#fff;}
@@ -105,17 +105,45 @@
   .diary-sum{font-size:13.5px;color:var(--diary-ink-soft);margin:0 0 12px;}
   .thermo{display:flex;height:12px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.12);margin-bottom:6px;}
   .thermo span{display:block;height:100%;}
-  .thermo .s-scam{background:#FF6B6B;} .thermo .s-likely{background:#FFB74D;}
-  .thermo .s-safe{background:#5CE0A0;} .thermo .s-unsure{background:#A9A5D9;}
   .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--diary-ink-soft);margin-bottom:14px;}
   .legend span{display:inline-flex;align-items:center;gap:5px;}
   .legend i{width:8px;height:8px;border-radius:50%;display:inline-block;}
-  .recent{display:flex;flex-direction:column;gap:9px;}
-  .entry{display:flex;align-items:flex-start;gap:9px;font-size:13px;}
+  .recent{display:flex;flex-direction:column;gap:2px;}
+  .entry{display:flex;align-items:flex-start;gap:9px;font-size:13px;padding:9px 6px;margin:0 -6px;border-radius:8px;cursor:pointer;background:none;border:none;text-align:left;width:calc(100% + 12px);font-family:inherit;color:inherit;}
+  .entry:hover{background:rgba(255,255,255,.08);}
   .entry .edot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;}
-  .entry .etext{color:var(--diary-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .entry .etext{color:var(--diary-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
   .entry .ewhen{color:var(--diary-ink-soft);font-size:11.5px;margin-left:auto;flex:none;}
   .diary-note{font-size:11.5px;color:var(--diary-ink-soft);margin:12px 0 0;}
+
+  /* Visited sites: full-width lavender-tinted block, sits directly under the diary block */
+  .sites-block{background:#EFEAFB;color:var(--ink);}
+  .sites-sub{color:var(--ink-soft);}
+  .site-list{display:flex;flex-direction:column;gap:2px;}
+  .site-row{display:flex;align-items:flex-start;gap:9px;font-size:13px;padding:9px 6px;margin:0 -6px;border-radius:8px;cursor:pointer;background:none;border:none;text-align:left;width:calc(100% + 12px);font-family:inherit;color:inherit;}
+  .site-row:hover{background:rgba(63,61,158,.08);}
+  .site-row .sdot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;}
+  .site-row .sbody{flex:1;min-width:0;}
+  .site-row .shost{font-weight:600;font-size:13.5px;color:var(--ink);}
+  .site-row .stitle{font-size:12px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .site-row .swhen{color:var(--muted);font-size:11.5px;flex:none;padding-top:1px;}
+
+  /* Detail popup, shared by diary and site rows */
+  .modal-overlay{position:fixed;inset:0;background:rgba(20,18,50,.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:1000;}
+  .modal-overlay[hidden]{display:none;}
+  .modal-card{background:var(--card);border-radius:16px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;padding:24px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+  .modal-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border:none;background:var(--bg);border-radius:50%;font-size:18px;color:var(--ink-soft);cursor:pointer;line-height:1;}
+  .modal-close:hover{color:var(--ink);}
+  .modal-badge{display:inline-block;font-size:12px;font-weight:600;padding:4px 11px;border-radius:999px;margin-bottom:12px;}
+  .modal-when{font-size:12px;color:var(--muted);margin-bottom:14px;}
+  .modal-h{font-family:'Newsreader',serif;font-weight:500;font-size:17px;margin:18px 0 6px;}
+  .modal-h:first-of-type{margin-top:0;}
+  .modal-text{font-size:14px;color:var(--ink);line-height:1.6;white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
+  .modal-factors{display:flex;flex-direction:column;gap:6px;}
+  .modal-factor-row{display:flex;align-items:flex-start;gap:8px;font-size:13px;}
+  .modal-fdot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;}
+  .modal-link{display:inline-block;margin-top:4px;font-size:13px;color:var(--accent);text-decoration:none;word-break:break-all;}
+  .modal-link:hover{text-decoration:underline;}
 
   footer{font-size:12.5px;color:var(--muted);line-height:1.6;padding:24px 2px 48px;}
 
@@ -175,12 +203,10 @@
       </div>
     </div>
   </div>
+</div>
 
-  <div class="toolbar">
-    <a class="tool-link" href="./sites.html">Visited sites</a>
-  </div>
-
-  <section class="diary" id="diary" hidden>
+<section class="fb diary" id="diary" hidden>
+  <div class="fb-inner">
     <div class="diary-head">
       <h2>Your risk diary</h2>
       <div class="diary-actions">
@@ -191,18 +217,38 @@
     <p class="diary-sum" id="diarySum"></p>
     <div class="thermo" id="thermo"></div>
     <div class="legend">
-      <span><i style="background:var(--r-scam)"></i>Scam</span>
-      <span><i style="background:var(--r-likely)"></i>Be careful</span>
-      <span><i style="background:var(--r-safe)"></i>Looks safe</span>
-      <span><i style="background:var(--r-unsure)"></i>Unsure</span>
+      <span><i style="background:#FF6B6B"></i>Scam</span>
+      <span><i style="background:#FFB74D"></i>Be careful</span>
+      <span><i style="background:#5CE0A0"></i>Looks safe</span>
+      <span><i style="background:#A9A5D9"></i>Unsure</span>
     </div>
     <div class="recent" id="recent"></div>
-    <p class="diary-note">Saved only on this device, so you can see your week at a glance. Nothing here is sent anywhere.</p>
-  </section>
+    <p class="diary-note">Saved only on this device. Tap an entry to see the full check. Nothing here is sent anywhere.</p>
+  </div>
+</section>
 
+<section class="fb sites-block" id="sitesBlock" hidden>
+  <div class="fb-inner">
+    <div class="diary-head">
+      <h2>Visited sites</h2>
+      <button class="diary-act clear" id="sitesClear">Clear</button>
+    </div>
+    <p class="diary-sum sites-sub">Pages you've scanned via bookmarklet or share, most recent first.</p>
+    <div class="site-list" id="siteList"></div>
+  </div>
+</section>
+
+<div class="page">
   <footer>
     A friendly AI helper, never a real person posing as one. Report scams to the Canadian Anti-Fraud Centre: 1-888-495-8501 / reportcyberandfraud.canada.ca
   </footer>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal-card" id="modalCard" role="dialog" aria-modal="true">
+    <button class="modal-close" id="modalClose" aria-label="Close">&times;</button>
+    <div id="modalBody"></div>
+  </div>
 </div>
 
 <script>
@@ -457,7 +503,8 @@ async function ask(text, atts, meta){
     messages.push({role:'assistant', content: reply});
     botBubble(reply, sources, factors);
     logCheck(typed || (atts&&atts.length?'(shared a screenshot)':''), risk, {
-      searchUsed: !!data.searchUsed, searchCount: data.searchCount||0, sources,
+      searchUsed: !!data.searchUsed, searchCount: data.searchCount||0, sources, factors,
+      fullText: typed, reply,
       siteUrl: meta && meta.siteUrl, siteTitle: meta && meta.siteTitle
     });
   }catch(e){
@@ -492,26 +539,35 @@ function loadSites(){
 function saveSites(list){
   try{ localStorage.setItem(SITE_KEY, JSON.stringify(list.slice(-200))); }catch(e){}
 }
-function logSite(url, title, risk){
+function logSite(url, title, risk, detail){
   if(!url) return;
   let hostname = url;
   try{ hostname = new URL(url).hostname.replace(/^www\./,''); }catch(e){ /* not a full URL, keep as-is */ }
   const list = loadSites();
-  list.push({ t:Date.now(), url, hostname, title: title || '', risk: risk || 'unsure' });
+  list.push({
+    id: Date.now()+'-'+Math.random().toString(36).slice(2,7),
+    t:Date.now(), url, hostname, title: title || '', risk: risk || 'unsure',
+    reply: (detail && detail.reply) || '', factors: (detail && detail.factors) || []
+  });
   saveSites(list);
 }
 function logCheck(snippet, risk, meta){
   meta = meta || {};
   const log=loadLog();
   log.push({
+    id: Date.now()+'-'+Math.random().toString(36).slice(2,7),
     t:Date.now(), mode, risk, text:(snippet||'').slice(0,90),
+    fullText: meta.fullText || snippet || '',
+    reply: meta.reply || '',
+    factors: meta.factors || [],
     search: !!meta.searchUsed,
     searchCount: meta.searchCount || 0,
     sources: (meta.sources || []).join('; ')
   });
   saveLog(log);
-  if(meta.siteUrl) logSite(meta.siteUrl, meta.siteTitle, risk);
+  if(meta.siteUrl) logSite(meta.siteUrl, meta.siteTitle, risk, { reply: meta.reply, factors: meta.factors });
   renderDiary();
+  renderSites();
 }
 function whenLabel(ts){
   const d=new Date(ts), now=new Date();
@@ -539,19 +595,22 @@ function renderDiary(){
       : flagged + (flagged===1?' was':' were') + ' a scam or worth being careful with.');
 
   thermo.innerHTML='';
+  const thermoColors={scam:'#FF6B6B',likely:'#FFB74D',safe:'#5CE0A0',unsure:'#A9A5D9'};
   ['scam','likely','safe','unsure'].forEach(k=>{
     if(!counts[k]) return;
     const s=document.createElement('span');
-    s.className='s-'+k;
     s.style.width=(counts[k]/total*100)+'%';
+    s.style.background=thermoColors[k];
     thermo.appendChild(s);
   });
 
   recent.innerHTML='';
   const colors={scam:'#FF6B6B',likely:'#FFB74D',safe:'#5CE0A0',unsure:'#A9A5D9'};
   log.slice(-6).reverse().forEach(e=>{
-    const row=document.createElement('div');
+    const row=document.createElement('button');
+    row.type='button';
     row.className='entry';
+    row.dataset.id=e.id;
     const dot=document.createElement('span');
     dot.className='edot'; dot.style.background=colors[e.risk]||colors.unsure;
     const t=document.createElement('span');
@@ -566,6 +625,11 @@ diaryClear.addEventListener('click',()=>{
   if(confirm('Clear your risk diary on this device?')){
     saveLog([]); renderDiary();
   }
+});
+recent.addEventListener('click', e=>{
+  const row=e.target.closest('.entry'); if(!row) return;
+  const entry=loadLog().find(x=>String(x.id)===row.dataset.id);
+  if(entry) openDiaryModal(entry);
 });
 
 function csvCell(v){
@@ -592,6 +656,104 @@ function downloadLog(){
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 diaryDownload.addEventListener('click', downloadLog);
+
+/* ---------- visited sites (rendered inline, full-width block) ---------- */
+const sitesBlock=document.getElementById('sitesBlock');
+const siteList=document.getElementById('siteList');
+const sitesClear=document.getElementById('sitesClear');
+
+function renderSites(){
+  const list=loadSites();
+  if(list.length===0){ sitesBlock.hidden=true; return; }
+  sitesBlock.hidden=false;
+  siteList.innerHTML='';
+  const colors={scam:'#C5221F',likely:'#B26A00',safe:'#1E7A3D',unsure:'#6B6B7B'};
+  list.slice(-8).reverse().forEach(s=>{
+    const row=document.createElement('button');
+    row.type='button';
+    row.className='site-row';
+    row.dataset.id=s.id;
+    const dot=document.createElement('span');
+    dot.className='sdot'; dot.style.background=colors[s.risk]||colors.unsure;
+    const body=document.createElement('span');
+    body.className='sbody';
+    const host=document.createElement('div');
+    host.className='shost'; host.textContent=s.hostname || s.url;
+    const title=document.createElement('div');
+    title.className='stitle'; title.textContent=s.title || s.url;
+    body.appendChild(host); body.appendChild(title);
+    const when=document.createElement('span');
+    when.className='swhen'; when.textContent=whenLabel(s.t);
+    row.appendChild(dot); row.appendChild(body); row.appendChild(when);
+    siteList.appendChild(row);
+  });
+}
+sitesClear.addEventListener('click',()=>{
+  if(confirm('Clear your visited sites on this device?')){
+    saveSites([]); renderSites();
+  }
+});
+siteList.addEventListener('click', e=>{
+  const row=e.target.closest('.site-row'); if(!row) return;
+  const entry=loadSites().find(x=>String(x.id)===row.dataset.id);
+  if(entry) openSiteModal(entry);
+});
+
+/* ---------- detail popup, shared by diary rows and site rows ---------- */
+const modalOverlay=document.getElementById('modalOverlay');
+const modalBody=document.getElementById('modalBody');
+const modalClose=document.getElementById('modalClose');
+const RISK_LABEL={scam:'Scam', likely:'Be careful', safe:'Looks safe', unsure:'Unsure'};
+const RISK_COLOR={scam:'#C5221F', likely:'#B26A00', safe:'#1E7A3D', unsure:'#6B6B7B'};
+const RISK_BG={scam:'#FBE7E6', likely:'#FBEEDB', safe:'#E4F3E9', unsure:'#EEEDF2'};
+
+function factorsHtml(factors){
+  if(!factors || !factors.length) return '';
+  const order={high:0, medium:1, low:2};
+  const sorted=factors.slice().sort((a,z)=>(order[a.severity]??2)-(order[z.severity]??2));
+  const colors={high:'#C5221F', medium:'#B26A00', low:'#1E7A3D'};
+  const rows=sorted.map(f=>
+    '<div class="modal-factor-row"><span class="modal-fdot" style="background:'+(colors[f.severity]||colors.low)+'"></span>'+
+    '<span><b>'+esc(f.name||'')+'</b>'+(f.note?' — '+esc(f.note):'')+'</span></div>'
+  ).join('');
+  return '<div class="modal-h">What stood out</div><div class="modal-factors">'+rows+'</div>';
+}
+
+function openDiaryModal(entry){
+  const risk=entry.risk||'unsure';
+  let html = '<span class="modal-badge" style="background:'+RISK_BG[risk]+';color:'+RISK_COLOR[risk]+'">'+(RISK_LABEL[risk]||'Unsure')+'</span>';
+  html += '<div class="modal-when">'+new Date(entry.t).toLocaleString()+'</div>';
+  html += '<div class="modal-h">What was checked</div><div class="modal-text">'+esc(entry.fullText || entry.text || '(screenshot)')+'</div>';
+  if(entry.reply){
+    html += '<div class="modal-h">What Cyber Sidekick said</div><div class="modal-text">'+esc(entry.reply)+'</div>';
+  }
+  html += factorsHtml(entry.factors);
+  if(entry.sources){
+    html += '<div class="modal-h">Sources checked</div><div class="modal-text">'+esc(entry.sources)+'</div>';
+  }
+  modalBody.innerHTML = html;
+  modalOverlay.hidden=false;
+}
+
+function openSiteModal(entry){
+  const risk=entry.risk||'unsure';
+  let html = '<span class="modal-badge" style="background:'+RISK_BG[risk]+';color:'+RISK_COLOR[risk]+'">'+(RISK_LABEL[risk]||'Unsure')+'</span>';
+  html += '<div class="modal-when">'+new Date(entry.t).toLocaleString()+'</div>';
+  html += '<div class="modal-h">'+esc(entry.hostname || entry.url)+'</div>';
+  if(entry.title) html += '<div class="modal-text">'+esc(entry.title)+'</div>';
+  html += '<a class="modal-link" href="'+entry.url+'" target="_blank" rel="noopener noreferrer">'+esc(entry.url)+'</a>';
+  if(entry.reply){
+    html += '<div class="modal-h">What Cyber Sidekick said</div><div class="modal-text">'+esc(entry.reply)+'</div>';
+  }
+  html += factorsHtml(entry.factors);
+  modalBody.innerHTML = html;
+  modalOverlay.hidden=false;
+}
+
+function closeModal(){ modalOverlay.hidden=true; }
+modalClose.addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', e=>{ if(e.target===modalOverlay) closeModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
 
 /* ---------- greet / mode ---------- */
 function greet(){
@@ -639,6 +801,7 @@ field.addEventListener('paste', async (e)=>{
 
 greet();
 renderDiary();
+renderSites();
 
 // Handle content shared in via the OS share sheet (share_target in manifest.json).
 // The service worker intercepts the actual share POST, stashes any text/url/title
