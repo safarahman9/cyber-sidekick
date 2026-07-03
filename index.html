@@ -155,6 +155,9 @@
         <button class="iconbtn" id="attach" title="Add a screenshot or file" aria-label="Add a screenshot or file">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.05 12.2 20.2a5 5 0 0 1-7.1-7.1l9.2-9.1a3.3 3.3 0 0 1 4.7 4.7l-9.2 9.1a1.7 1.7 0 0 1-2.4-2.4l8.5-8.4"/></svg>
         </button>
+        <button class="iconbtn" id="capture" title="Capture a tab or window to scan" aria-label="Capture a tab or window to scan">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><circle cx="12" cy="11" r="3"/><path d="M8 21h8"/></svg>
+        </button>
         <input id="file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf" multiple hidden>
         <input id="field" type="text" placeholder="Or paste your own message..." aria-label="Paste a suspicious message">
         <button class="send" id="send">Send</button>
@@ -223,6 +226,7 @@ const field=document.getElementById('field');
 const send=document.getElementById('send');
 const modebar=document.getElementById('modebar');
 const attachBtn=document.getElementById('attach');
+const captureBtn=document.getElementById('capture');
 const fileInput=document.getElementById('file');
 const attachWrap=document.getElementById('attachments');
 const diary=document.getElementById('diary');
@@ -327,6 +331,50 @@ fileInput.addEventListener('change', async ()=>{
     catch(e){ /* skip unsupported */ }
   }
   renderPending();
+});
+
+// Screen capture: lets the person pick any open tab or window via the browser's
+// native picker, grabs a single frame, and queues it as an attachment through the
+// same pipeline as a manual screenshot upload. No OS shortcut or clipboard needed.
+captureBtn.addEventListener('click', async ()=>{
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia){
+    alert('Screen capture is not supported in this browser. Try pasting a screenshot instead.');
+    return;
+  }
+  let stream;
+  try{
+    stream = await navigator.mediaDevices.getDisplayMedia({ video:true });
+  }catch(err){
+    return; // person cancelled the picker or denied permission
+  }
+  try{
+    const track = stream.getVideoTracks()[0];
+    let blob;
+    if('ImageCapture' in window){
+      const capture = new ImageCapture(track);
+      const bitmap = await capture.grabFrame();
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width; canvas.height = bitmap.height;
+      canvas.getContext('2d').drawImage(bitmap, 0, 0);
+      blob = await new Promise(res=>canvas.toBlob(res, 'image/png'));
+    }else{
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      await video.play();
+      await new Promise(r=>setTimeout(r, 200)); // let a frame render
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      blob = await new Promise(res=>canvas.toBlob(res, 'image/png'));
+    }
+    const file = new File([blob], 'screen-capture.png', { type:'image/png' });
+    pending.push(await fileToAtt(file));
+    renderPending();
+  }catch(err){
+    alert('Could not capture the screen. Please try again.');
+  }finally{
+    stream.getTracks().forEach(t=>t.stop());
+  }
 });
 
 /* ---------- sending ---------- */
@@ -590,12 +638,18 @@ if("serviceWorker" in navigator){navigator.serviceWorker.register("./service-wor
   const scanUrl = p.get('scanurl');
   const scanTitle = p.get('scantitle');
   const scanText = p.get('scantext');
+  const scanMode = p.get('scanmode'); // 'selection' or 'page'
   if (!scanUrl && !scanTitle && !scanText) return;
 
-  const parts = ['Can you check this page for scam or safety risks?'];
+  const parts = ['Can you check this for scam or safety risks?'];
   if (scanTitle) parts.push('Page title: ' + scanTitle);
   if (scanUrl) parts.push('Page URL: ' + scanUrl);
-  if (scanText) parts.push('Visible page text: ' + scanText);
+  if (scanText) {
+    parts.push(
+      (scanMode === 'selection' ? 'The person highlighted this specific text on the page: ' : 'Visible page text: ')
+      + scanText
+    );
+  }
 
   ask(parts.join('\n'), []);
   history.replaceState(null, '', location.pathname);
