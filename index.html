@@ -108,7 +108,7 @@
   .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--diary-ink-soft);margin-bottom:14px;}
   .legend span{display:inline-flex;align-items:center;gap:5px;}
   .legend i{width:8px;height:8px;border-radius:50%;display:inline-block;}
-  .recent{display:flex;flex-direction:column;gap:2px;max-height:340px;overflow-y:auto;padding-right:4px;}
+  .recent{display:flex;flex-direction:column;gap:2px;max-height:640px;overflow-y:auto;padding-right:4px;}
   .recent::-webkit-scrollbar{width:6px;}
   .recent::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:999px;}
   .entry{display:flex;align-items:flex-start;gap:9px;font-size:13px;padding:9px 6px;margin:0 -6px;border-radius:8px;cursor:pointer;background:none;border:none;text-align:left;width:calc(100% + 12px);font-family:inherit;color:inherit;}
@@ -290,7 +290,6 @@ const MAX_TURNS = 16; // how much conversation history we send back each turn
 let mode = "me";
 let messages = [];   // running conversation in Anthropic format
 let pending = [];    // attachments queued for the next send: {block, name, kind, url}
-let sessionId = null; // groups every turn of one conversation into a single diary entry
 
 const chat=document.getElementById('chat');
 const chips=document.getElementById('chips');
@@ -540,7 +539,7 @@ async function ask(text, atts, meta){
     const imgAtt = (atts||[]).find(a=>a.kind==='image');
     if(imgAtt && imgAtt.url){ thumb = await makeThumb(imgAtt.url, 220); }
 
-    logTurn(risk, factors, {
+    logCheck(risk, factors, {
       q: typed || (atts&&atts.length ? '(shared a screenshot)' : ''),
       a: reply, thumb, sources,
       searchUsed: !!data.searchUsed,
@@ -592,27 +591,21 @@ function logSite(url, title, risk, detail){
   });
   saveSites(list);
 }
-// Every turn of one conversation (same audience mode, not reset by switching or
-// re-greeting) is appended to a single session entry. The session's risk/factors
-// always reflect the LATEST turn, that's the final verdict shown in the diary.
-function logTurn(risk, factors, turn){
+// Every scan (paste, screenshot, share, bookmarklet, chip) is its own diary entry,
+// so nothing gets silently merged into an earlier entry, every check stays visible
+// and clickable on its own.
+function logCheck(risk, factors, turn){
   const log = loadLog();
-  let session = log.find(s => s.id === sessionId);
-  if(!session){
-    session = { id: sessionId, t: Date.now(), mode, turns: [] };
-    log.push(session);
-  }
-  session.risk = risk;
-  session.factors = factors || [];
-  session.lastAt = Date.now();
-  if(turn.siteUrl){ session.siteUrl = turn.siteUrl; session.siteTitle = turn.siteTitle; }
-  session.turns.push({
-    t: Date.now(),
+  log.push({
+    id: Date.now()+'-'+Math.random().toString(36).slice(2,7),
+    t: Date.now(), mode, risk, factors: factors || [],
     q: (turn.q || '').slice(0, 4000),
     a: (turn.a || '').slice(0, 4000),
     thumb: turn.thumb || null,
     sources: turn.sources || [],
-    search: !!turn.searchUsed
+    search: !!turn.searchUsed,
+    siteUrl: turn.siteUrl || null,
+    siteTitle: turn.siteTitle || null
   });
   saveLog(log);
   if(turn.siteUrl) logSite(turn.siteUrl, turn.siteTitle, risk, { reply: turn.a, factors, thumb: turn.thumb });
@@ -656,20 +649,18 @@ function renderDiary(){
 
   recent.innerHTML='';
   const colors={scam:'#FF6B6B',likely:'#FFB74D',safe:'#5CE0A0',unsure:'#A9A5D9'};
-  log.slice().reverse().forEach(session=>{
-    const lastTurn = session.turns[session.turns.length-1] || {};
+  log.slice().reverse().forEach(entry=>{
     const row=document.createElement('button');
     row.type='button';
     row.className='entry';
-    row.dataset.id=session.id;
+    row.dataset.id=entry.id;
     const dot=document.createElement('span');
-    dot.className='edot'; dot.style.background=colors[session.risk]||colors.unsure;
+    dot.className='edot'; dot.style.background=colors[entry.risk]||colors.unsure;
     const t=document.createElement('span');
-    const turnCount = session.turns.length;
     t.className='etext';
-    t.textContent = (lastTurn.q || '(screenshot)') + (turnCount>1 ? '  \u00b7 '+turnCount+' messages' : '');
+    t.textContent = entry.q || '(screenshot)';
     const w=document.createElement('span');
-    w.className='ewhen'; w.textContent=whenLabel(session.lastAt||session.t);
+    w.className='ewhen'; w.textContent=whenLabel(entry.t);
     row.appendChild(dot); row.appendChild(t); row.appendChild(w);
     recent.appendChild(row);
   });
@@ -694,19 +685,17 @@ function downloadLog(){
   const log=loadLog();
   if(log.length===0) return;
   const rows=[['Date','Time','Timestamp (ISO)','Audience','Final verdict','Message','Reply','Photo involved','Site URL','Search used','Sources']];
-  log.forEach(session=>{
-    session.turns.forEach(turn=>{
-      const d=new Date(turn.t || session.lastAt || session.t);
-      rows.push([
-        d.toLocaleDateString(), d.toLocaleTimeString(), d.toISOString(),
-        session.mode||'', session.risk||'',
-        turn.q||'', turn.a||'',
-        turn.thumb ? 'yes' : 'no',
-        session.siteUrl||'',
-        turn.search?'yes':'no',
-        (turn.sources||[]).join('; ')
-      ]);
-    });
+  log.forEach(entry=>{
+    const d=new Date(entry.t);
+    rows.push([
+      d.toLocaleDateString(), d.toLocaleTimeString(), d.toISOString(),
+      entry.mode||'', entry.risk||'',
+      entry.q||'', entry.a||'',
+      entry.thumb ? 'yes' : 'no',
+      entry.siteUrl||'',
+      entry.search?'yes':'no',
+      (entry.sources||[]).join('; ')
+    ]);
   });
   const csv='\uFEFF'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
@@ -781,31 +770,26 @@ function factorsHtml(factors){
   return '<div class="modal-h">What stood out</div><div class="modal-factors">'+rows+'</div>';
 }
 
-function openDiaryModal(session){
-  const risk=session.risk||'unsure';
+function openDiaryModal(entry){
+  const risk=entry.risk||'unsure';
   let html = '<span class="modal-badge" style="background:'+RISK_BG[risk]+';color:'+RISK_COLOR[risk]+'">Final verdict: '+(RISK_LABEL[risk]||'Unsure')+'</span>';
-  html += '<div class="modal-when">'+new Date(session.lastAt||session.t).toLocaleString()+'</div>';
+  html += '<div class="modal-when">'+new Date(entry.t).toLocaleString()+'</div>';
 
-  if(session.siteUrl){
-    html += '<div class="modal-site-chip"><span>&#128279;</span><div><div class="shost">'+esc(session.siteUrl.replace(/^https?:\/\//,''))+'</div>'+
-      '<a href="'+session.siteUrl+'" target="_blank" rel="noopener noreferrer">Open site</a></div></div>';
+  if(entry.siteUrl){
+    html += '<div class="modal-site-chip"><span>&#128279;</span><div><div class="shost">'+esc(entry.siteUrl.replace(/^https?:\/\//,''))+'</div>'+
+      '<a href="'+entry.siteUrl+'" target="_blank" rel="noopener noreferrer">Open site</a></div></div>';
   }
 
-  html += '<div class="modal-h">Full discussion</div><div class="modal-thread">';
-  (session.turns||[]).forEach(turn=>{
-    html += '<div class="modal-turn">';
-    if(turn.thumb) html += '<img class="modal-thumb" src="'+turn.thumb+'" alt="Screenshot that was scanned">';
-    if(turn.q) html += '<div class="modal-q">'+esc(turn.q)+'</div>';
-    if(turn.a) html += '<div class="modal-a">'+esc(turn.a)+'</div>';
-    html += '</div>';
-  });
-  html += '</div>';
+  html += '<div class="modal-h">Full discussion</div><div class="modal-thread"><div class="modal-turn">';
+  if(entry.thumb) html += '<img class="modal-thumb" src="'+entry.thumb+'" alt="Screenshot that was scanned">';
+  if(entry.q) html += '<div class="modal-q">'+esc(entry.q)+'</div>';
+  if(entry.a) html += '<div class="modal-a">'+esc(entry.a)+'</div>';
+  html += '</div></div>';
 
-  html += factorsHtml(session.factors);
+  html += factorsHtml(entry.factors);
 
-  const allSources = Array.from(new Set((session.turns||[]).flatMap(t=>t.sources||[])));
-  if(allSources.length){
-    html += '<div class="modal-h">Sources checked</div><div class="modal-text">'+esc(allSources.join(', '))+'</div>';
+  if(entry.sources && entry.sources.length){
+    html += '<div class="modal-h">Sources checked</div><div class="modal-text">'+esc(entry.sources.join(', '))+'</div>';
   }
 
   modalBody.innerHTML = html;
@@ -838,7 +822,6 @@ function greet(){
   chat.innerHTML='';
   speechSynthesis.cancel();
   messages=[];           // new audience means a fresh conversation and system prompt
-  sessionId = Date.now()+'-'+Math.random().toString(36).slice(2,7); // new diary session too
   pending=[]; renderPending();
   botBubble(GREET[mode]); // greeting is not logged
 }
