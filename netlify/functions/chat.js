@@ -114,7 +114,17 @@ RISK: SCAM   (clearly a scam)
 RISK: LIKELY (probably a scam or suspicious)
 RISK: SAFE   (very likely legitimate)
 RISK: UNSURE (you cannot tell yet)
-This line is removed before the person sees it, so never mention it or refer to it in your reply, and keep the rest of your reply in plain text.`;
+This line is removed before the person sees it, so never mention it or refer to it in your reply, and keep the rest of your reply in plain text.
+
+INTERNAL FACTORS TAG (for the risk breakdown panel, not shown to the person as raw text):
+Immediately after the RISK line, on one more new final line, output a JSON array of the specific risk factors you weighed, most risky first. Between 2 and 5 factors. Each factor is an object with:
+- "name": a short label, 2 to 4 words (examples: "Urgency pressure", "Suspicious link", "Gift card payment", "Lookalike domain", "Unsolicited contact", "Secrecy request", "Legitimate domain", "No payment requested")
+- "severity": one of "high", "medium", "low"
+- "note": a specific, short reason tied to THIS message, under 12 words, no generic filler
+Only include factors that genuinely apply to this specific message, never pad the list to hit 5. A clearly safe message can have mostly "low" severity factors explaining why it looks fine.
+Format exactly like this, one line, valid JSON, nothing else on the line:
+FACTORS: [{"name":"Urgency pressure","severity":"high","note":"demands action before a countdown expires"},{"name":"Gift card payment","severity":"high","note":"asks for payment in gift cards"}]
+This line is removed before the person sees it, so never mention it or refer to it in your reply.`;
 }
 
 exports.handler = async (event) => {
@@ -193,6 +203,28 @@ exports.handler = async (event) => {
       .join("\n")
       .trim() || "Sorry, I could not get an answer just now. Please try again.";
 
+    // Pull the hidden factors tag off the end (it comes after RISK) and strip it too.
+    let factors = [];
+    const factorsTag = reply.match(/\n?FACTORS:\s*(\[[\s\S]*\])\s*$/i);
+    if (factorsTag) {
+      try {
+        const parsed = JSON.parse(factorsTag[1]);
+        if (Array.isArray(parsed)) {
+          const order = { high: 0, medium: 1, low: 2 };
+          factors = parsed
+            .filter((f) => f && typeof f.name === "string" && typeof f.severity === "string")
+            .map((f) => ({
+              name: f.name.slice(0, 40),
+              severity: /^(high|medium|low)$/i.test(f.severity) ? f.severity.toLowerCase() : "low",
+              note: typeof f.note === "string" ? f.note.slice(0, 100) : ""
+            }))
+            .sort((a, b) => order[a.severity] - order[b.severity])
+            .slice(0, 5);
+        }
+      } catch (e) { /* malformed JSON from the model, just drop the factors list */ }
+      reply = reply.slice(0, factorsTag.index).trim();
+    }
+
     // Pull the hidden risk tag off the end and strip it from what the person sees.
     let risk = "unsure";
     const tag = reply.match(/\[?\s*RISK:\s*(SCAM|LIKELY|SAFE|UNSURE)\s*\]?\s*$/i);
@@ -204,7 +236,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ reply, risk, searchUsed, searchCount, sources: sources.slice(0, 8) })
+      body: JSON.stringify({ reply, risk, factors, searchUsed, searchCount, sources: sources.slice(0, 8) })
     };
   } catch (e) {
     return { statusCode: 500, body: JSON.stringify({ error: "Server error" }) };
