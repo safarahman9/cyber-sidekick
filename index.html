@@ -108,7 +108,9 @@
   .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--diary-ink-soft);margin-bottom:14px;}
   .legend span{display:inline-flex;align-items:center;gap:5px;}
   .legend i{width:8px;height:8px;border-radius:50%;display:inline-block;}
-  .recent{display:flex;flex-direction:column;gap:2px;}
+  .recent{display:flex;flex-direction:column;gap:2px;max-height:340px;overflow-y:auto;padding-right:4px;}
+  .recent::-webkit-scrollbar{width:6px;}
+  .recent::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:999px;}
   .entry{display:flex;align-items:flex-start;gap:9px;font-size:13px;padding:9px 6px;margin:0 -6px;border-radius:8px;cursor:pointer;background:none;border:none;text-align:left;width:calc(100% + 12px);font-family:inherit;color:inherit;}
   .entry:hover{background:rgba(255,255,255,.08);}
   .entry .edot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;}
@@ -119,7 +121,9 @@
   /* Visited sites: full-width lavender-tinted block, sits directly under the diary block */
   .sites-block{background:#EFEAFB;color:var(--ink);}
   .sites-sub{color:var(--ink-soft);}
-  .site-list{display:flex;flex-direction:column;gap:2px;}
+  .site-list{display:flex;flex-direction:column;gap:2px;max-height:340px;overflow-y:auto;padding-right:4px;}
+  .site-list::-webkit-scrollbar{width:6px;}
+  .site-list::-webkit-scrollbar-thumb{background:rgba(63,61,158,.25);border-radius:999px;}
   .site-row{display:flex;align-items:flex-start;gap:9px;font-size:13px;padding:9px 6px;margin:0 -6px;border-radius:8px;cursor:pointer;background:none;border:none;text-align:left;width:calc(100% + 12px);font-family:inherit;color:inherit;}
   .site-row:hover{background:rgba(63,61,158,.08);}
   .site-row .sdot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;}
@@ -143,6 +147,14 @@
   .modal-factor-row{display:flex;align-items:flex-start;gap:8px;font-size:13px;}
   .modal-fdot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;}
   .modal-link{display:inline-block;margin-top:4px;font-size:13px;color:var(--accent);text-decoration:none;word-break:break-all;}
+  .modal-thread{display:flex;flex-direction:column;gap:10px;}
+  .modal-turn{display:flex;flex-direction:column;gap:6px;}
+  .modal-q{align-self:flex-end;max-width:88%;background:var(--ink);color:#fff;padding:9px 13px;border-radius:12px;border-bottom-right-radius:4px;font-size:13.5px;white-space:pre-wrap;}
+  .modal-a{align-self:flex-start;max-width:92%;background:var(--bg);border:1px solid var(--line);padding:9px 13px;border-radius:12px;border-bottom-left-radius:4px;font-size:13.5px;white-space:pre-wrap;}
+  .modal-thumb{max-width:180px;border-radius:10px;border:1px solid var(--line);display:block;align-self:flex-end;}
+  .modal-site-chip{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:14px;}
+  .modal-site-chip .shost{font-weight:600;font-size:13.5px;}
+  .modal-site-chip a{color:var(--accent);font-size:12px;text-decoration:none;word-break:break-all;}
   .modal-link:hover{text-decoration:underline;}
 
   footer{font-size:12.5px;color:var(--muted);line-height:1.6;padding:24px 2px 48px;}
@@ -278,6 +290,7 @@ const MAX_TURNS = 16; // how much conversation history we send back each turn
 let mode = "me";
 let messages = [];   // running conversation in Anthropic format
 let pending = [];    // attachments queued for the next send: {block, name, kind, url}
+let sessionId = null; // groups every turn of one conversation into a single diary entry
 
 const chat=document.getElementById('chat');
 const chips=document.getElementById('chips');
@@ -475,6 +488,26 @@ function outbound(){
   });
 }
 
+// Downscale a data-URL image to a small JPEG thumbnail before saving it to
+// localStorage, a full-size screenshot would blow past storage limits fast.
+function makeThumb(dataUrl, maxW){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    img.onload=()=>{
+      const scale = Math.min(1, maxW / img.width);
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      try{ resolve(canvas.toDataURL('image/jpeg', 0.6)); }
+      catch(e){ resolve(null); }
+    };
+    img.onerror=()=>resolve(null);
+    img.src=dataUrl;
+  });
+}
+
 async function ask(text, atts, meta){
   const blocks=[];
   (atts||[]).forEach(a=>blocks.push(a.block));
@@ -502,9 +535,15 @@ async function ask(text, atts, meta){
     const factors = Array.isArray(data.factors) ? data.factors : [];
     messages.push({role:'assistant', content: reply});
     botBubble(reply, sources, factors);
-    logCheck(typed || (atts&&atts.length?'(shared a screenshot)':''), risk, {
-      searchUsed: !!data.searchUsed, searchCount: data.searchCount||0, sources, factors,
-      fullText: typed, reply,
+
+    let thumb = null;
+    const imgAtt = (atts||[]).find(a=>a.kind==='image');
+    if(imgAtt && imgAtt.url){ thumb = await makeThumb(imgAtt.url, 220); }
+
+    logTurn(risk, factors, {
+      q: typed || (atts&&atts.length ? '(shared a screenshot)' : ''),
+      a: reply, thumb, sources,
+      searchUsed: !!data.searchUsed,
       siteUrl: meta && meta.siteUrl, siteTitle: meta && meta.siteTitle
     });
   }catch(e){
@@ -530,14 +569,14 @@ function loadLog(){
   catch(e){ return []; }
 }
 function saveLog(log){
-  try{ localStorage.setItem(LOG_KEY, JSON.stringify(log.slice(-200))); }catch(e){}
+  try{ localStorage.setItem(LOG_KEY, JSON.stringify(log.slice(-120))); }catch(e){}
 }
 function loadSites(){
   try{ return JSON.parse(localStorage.getItem(SITE_KEY)) || []; }
   catch(e){ return []; }
 }
 function saveSites(list){
-  try{ localStorage.setItem(SITE_KEY, JSON.stringify(list.slice(-200))); }catch(e){}
+  try{ localStorage.setItem(SITE_KEY, JSON.stringify(list.slice(-150))); }catch(e){}
 }
 function logSite(url, title, risk, detail){
   if(!url) return;
@@ -547,25 +586,36 @@ function logSite(url, title, risk, detail){
   list.push({
     id: Date.now()+'-'+Math.random().toString(36).slice(2,7),
     t:Date.now(), url, hostname, title: title || '', risk: risk || 'unsure',
-    reply: (detail && detail.reply) || '', factors: (detail && detail.factors) || []
+    reply: (detail && detail.reply) || '',
+    factors: (detail && detail.factors) || [],
+    thumb: (detail && detail.thumb) || null
   });
   saveSites(list);
 }
-function logCheck(snippet, risk, meta){
-  meta = meta || {};
-  const log=loadLog();
-  log.push({
-    id: Date.now()+'-'+Math.random().toString(36).slice(2,7),
-    t:Date.now(), mode, risk, text:(snippet||'').slice(0,90),
-    fullText: meta.fullText || snippet || '',
-    reply: meta.reply || '',
-    factors: meta.factors || [],
-    search: !!meta.searchUsed,
-    searchCount: meta.searchCount || 0,
-    sources: (meta.sources || []).join('; ')
+// Every turn of one conversation (same audience mode, not reset by switching or
+// re-greeting) is appended to a single session entry. The session's risk/factors
+// always reflect the LATEST turn, that's the final verdict shown in the diary.
+function logTurn(risk, factors, turn){
+  const log = loadLog();
+  let session = log.find(s => s.id === sessionId);
+  if(!session){
+    session = { id: sessionId, t: Date.now(), mode, turns: [] };
+    log.push(session);
+  }
+  session.risk = risk;
+  session.factors = factors || [];
+  session.lastAt = Date.now();
+  if(turn.siteUrl){ session.siteUrl = turn.siteUrl; session.siteTitle = turn.siteTitle; }
+  session.turns.push({
+    t: Date.now(),
+    q: (turn.q || '').slice(0, 4000),
+    a: (turn.a || '').slice(0, 4000),
+    thumb: turn.thumb || null,
+    sources: turn.sources || [],
+    search: !!turn.searchUsed
   });
   saveLog(log);
-  if(meta.siteUrl) logSite(meta.siteUrl, meta.siteTitle, risk, { reply: meta.reply, factors: meta.factors });
+  if(turn.siteUrl) logSite(turn.siteUrl, turn.siteTitle, risk, { reply: turn.a, factors, thumb: turn.thumb });
   renderDiary();
   renderSites();
 }
@@ -584,11 +634,11 @@ function renderDiary(){
   log.forEach(e=>{ counts[e.risk]=(counts[e.risk]||0)+1; });
   const total=log.length;
   const weekAgo=Date.now()-7*24*60*60*1000;
-  const week=log.filter(e=>e.t>=weekAgo).length;
+  const week=log.filter(e=>(e.lastAt||e.t)>=weekAgo).length;
 
   const flagged=counts.scam+counts.likely;
   diarySum.textContent =
-    'You\u2019ve checked ' + total + (total===1?' message':' messages') +
+    'You\u2019ve checked ' + total + (total===1?' thing':' things') +
     ' (' + week + ' in the last 7 days). ' +
     (flagged===0
       ? 'None turned out to be clear scams so far.'
@@ -606,17 +656,20 @@ function renderDiary(){
 
   recent.innerHTML='';
   const colors={scam:'#FF6B6B',likely:'#FFB74D',safe:'#5CE0A0',unsure:'#A9A5D9'};
-  log.slice(-6).reverse().forEach(e=>{
+  log.slice().reverse().forEach(session=>{
+    const lastTurn = session.turns[session.turns.length-1] || {};
     const row=document.createElement('button');
     row.type='button';
     row.className='entry';
-    row.dataset.id=e.id;
+    row.dataset.id=session.id;
     const dot=document.createElement('span');
-    dot.className='edot'; dot.style.background=colors[e.risk]||colors.unsure;
+    dot.className='edot'; dot.style.background=colors[session.risk]||colors.unsure;
     const t=document.createElement('span');
-    t.className='etext'; t.textContent=e.text || '(screenshot)';
+    const turnCount = session.turns.length;
+    t.className='etext';
+    t.textContent = (lastTurn.q || '(screenshot)') + (turnCount>1 ? '  \u00b7 '+turnCount+' messages' : '');
     const w=document.createElement('span');
-    w.className='ewhen'; w.textContent=whenLabel(e.t);
+    w.className='ewhen'; w.textContent=whenLabel(session.lastAt||session.t);
     row.appendChild(dot); row.appendChild(t); row.appendChild(w);
     recent.appendChild(row);
   });
@@ -640,11 +693,20 @@ function csvCell(v){
 function downloadLog(){
   const log=loadLog();
   if(log.length===0) return;
-  const rows=[['Date','Time','Timestamp (ISO)','Audience','Risk','Search used','# searches','Sources','Snippet']];
-  log.forEach(e=>{
-    const d=new Date(e.t);
-    rows.push([ d.toLocaleDateString(), d.toLocaleTimeString(), d.toISOString(),
-                e.mode||'', e.risk||'', e.search?'yes':'no', e.searchCount||0, e.sources||'', e.text||'' ]);
+  const rows=[['Date','Time','Timestamp (ISO)','Audience','Final verdict','Message','Reply','Photo involved','Site URL','Search used','Sources']];
+  log.forEach(session=>{
+    session.turns.forEach(turn=>{
+      const d=new Date(turn.t || session.lastAt || session.t);
+      rows.push([
+        d.toLocaleDateString(), d.toLocaleTimeString(), d.toISOString(),
+        session.mode||'', session.risk||'',
+        turn.q||'', turn.a||'',
+        turn.thumb ? 'yes' : 'no',
+        session.siteUrl||'',
+        turn.search?'yes':'no',
+        (turn.sources||[]).join('; ')
+      ]);
+    });
   });
   const csv='\uFEFF'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
@@ -668,7 +730,7 @@ function renderSites(){
   sitesBlock.hidden=false;
   siteList.innerHTML='';
   const colors={scam:'#C5221F',likely:'#B26A00',safe:'#1E7A3D',unsure:'#6B6B7B'};
-  list.slice(-8).reverse().forEach(s=>{
+  list.slice().reverse().forEach(s=>{
     const row=document.createElement('button');
     row.type='button';
     row.className='site-row';
@@ -719,29 +781,45 @@ function factorsHtml(factors){
   return '<div class="modal-h">What stood out</div><div class="modal-factors">'+rows+'</div>';
 }
 
-function openDiaryModal(entry){
-  const risk=entry.risk||'unsure';
-  let html = '<span class="modal-badge" style="background:'+RISK_BG[risk]+';color:'+RISK_COLOR[risk]+'">'+(RISK_LABEL[risk]||'Unsure')+'</span>';
-  html += '<div class="modal-when">'+new Date(entry.t).toLocaleString()+'</div>';
-  html += '<div class="modal-h">What was checked</div><div class="modal-text">'+esc(entry.fullText || entry.text || '(screenshot)')+'</div>';
-  if(entry.reply){
-    html += '<div class="modal-h">What Cyber Sidekick said</div><div class="modal-text">'+esc(entry.reply)+'</div>';
+function openDiaryModal(session){
+  const risk=session.risk||'unsure';
+  let html = '<span class="modal-badge" style="background:'+RISK_BG[risk]+';color:'+RISK_COLOR[risk]+'">Final verdict: '+(RISK_LABEL[risk]||'Unsure')+'</span>';
+  html += '<div class="modal-when">'+new Date(session.lastAt||session.t).toLocaleString()+'</div>';
+
+  if(session.siteUrl){
+    html += '<div class="modal-site-chip"><span>&#128279;</span><div><div class="shost">'+esc(session.siteUrl.replace(/^https?:\/\//,''))+'</div>'+
+      '<a href="'+session.siteUrl+'" target="_blank" rel="noopener noreferrer">Open site</a></div></div>';
   }
-  html += factorsHtml(entry.factors);
-  if(entry.sources){
-    html += '<div class="modal-h">Sources checked</div><div class="modal-text">'+esc(entry.sources)+'</div>';
+
+  html += '<div class="modal-h">Full discussion</div><div class="modal-thread">';
+  (session.turns||[]).forEach(turn=>{
+    html += '<div class="modal-turn">';
+    if(turn.thumb) html += '<img class="modal-thumb" src="'+turn.thumb+'" alt="Screenshot that was scanned">';
+    if(turn.q) html += '<div class="modal-q">'+esc(turn.q)+'</div>';
+    if(turn.a) html += '<div class="modal-a">'+esc(turn.a)+'</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  html += factorsHtml(session.factors);
+
+  const allSources = Array.from(new Set((session.turns||[]).flatMap(t=>t.sources||[])));
+  if(allSources.length){
+    html += '<div class="modal-h">Sources checked</div><div class="modal-text">'+esc(allSources.join(', '))+'</div>';
   }
+
   modalBody.innerHTML = html;
   modalOverlay.hidden=false;
 }
 
 function openSiteModal(entry){
   const risk=entry.risk||'unsure';
-  let html = '<span class="modal-badge" style="background:'+RISK_BG[risk]+';color:'+RISK_COLOR[risk]+'">'+(RISK_LABEL[risk]||'Unsure')+'</span>';
+  let html = '<span class="modal-badge" style="background:'+RISK_BG[risk]+';color:'+RISK_COLOR[risk]+'">Final verdict: '+(RISK_LABEL[risk]||'Unsure')+'</span>';
   html += '<div class="modal-when">'+new Date(entry.t).toLocaleString()+'</div>';
   html += '<div class="modal-h">'+esc(entry.hostname || entry.url)+'</div>';
   if(entry.title) html += '<div class="modal-text">'+esc(entry.title)+'</div>';
   html += '<a class="modal-link" href="'+entry.url+'" target="_blank" rel="noopener noreferrer">'+esc(entry.url)+'</a>';
+  if(entry.thumb) html += '<div style="margin-top:12px"><img class="modal-thumb" src="'+entry.thumb+'" alt="Screenshot involved in this scan"></div>';
   if(entry.reply){
     html += '<div class="modal-h">What Cyber Sidekick said</div><div class="modal-text">'+esc(entry.reply)+'</div>';
   }
@@ -760,6 +838,7 @@ function greet(){
   chat.innerHTML='';
   speechSynthesis.cancel();
   messages=[];           // new audience means a fresh conversation and system prompt
+  sessionId = Date.now()+'-'+Math.random().toString(36).slice(2,7); // new diary session too
   pending=[]; renderPending();
   botBubble(GREET[mode]); // greeting is not logged
 }
