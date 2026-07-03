@@ -542,16 +542,64 @@ greet();
 renderDiary();
 
 // Handle content shared in via the OS share sheet (share_target in manifest.json).
-// Installed PWAs receive shared links/text/titles as query params on load.
-const shareParams = new URLSearchParams(location.search);
-const shared = shareParams.get('url') || shareParams.get('text') || shareParams.get('title');
-if (shared) {
-  sendCurrent(shared);
-  // clean the URL so a page refresh doesn't silently re-send the same scan
-  history.replaceState(null, '', location.pathname);
-}
+// The service worker intercepts the actual share POST, stashes any text/url/title
+// and shared image/pdf in a dedicated cache, then redirects here with ?shared=1.
+// Pick that payload up, feed it into the same ask() path as a normal upload, then
+// clear the cache and the URL so a refresh doesn't re-send the same scan.
+(async function handleIncomingShare(){
+  if (new URLSearchParams(location.search).get('shared') !== '1') return;
+  if (!('caches' in window)) return;
+
+  try{
+    const cache = await caches.open('cyber-share-v1');
+    const payloadRes = await cache.match('/__shared_payload');
+    if (!payloadRes) return;
+
+    const payload = await payloadRes.json();
+    const fileRes = await cache.match('/__shared_file');
+
+    const atts = [];
+    if (fileRes) {
+      const blob = await fileRes.blob();
+      const type = blob.type || 'image/png';
+      const name = type === 'application/pdf' ? 'shared-file.pdf' : 'shared-image.png';
+      const file = new File([blob], name, { type });
+      try{ atts.push(await fileToAtt(file)); }
+      catch(e){ /* unsupported file type, skip attachment, still send any text */ }
+    }
+
+    const text = payload.url || payload.text || payload.title || '';
+    if (text || atts.length) ask(text, atts);
+
+    await cache.delete('/__shared_payload');
+    await cache.delete('/__shared_file');
+  }catch(err){ /* nothing usable was shared, ignore */ }
+  finally{
+    history.replaceState(null, '', location.pathname);
+  }
+})();
 
 if("serviceWorker" in navigator){navigator.serviceWorker.register("./service-worker.js");}
+
+// Handle "scan this page" bookmarklet links (?scanurl=&scantitle=&scantext=).
+// The bookmarklet grabs the current page's URL, title, and visible text and
+// opens this app with them as query params, this is the only way a PWA can
+// see a page's content, since it has no access to other tabs on its own.
+(function handleBookmarkletScan(){
+  const p = new URLSearchParams(location.search);
+  const scanUrl = p.get('scanurl');
+  const scanTitle = p.get('scantitle');
+  const scanText = p.get('scantext');
+  if (!scanUrl && !scanTitle && !scanText) return;
+
+  const parts = ['Can you check this page for scam or safety risks?'];
+  if (scanTitle) parts.push('Page title: ' + scanTitle);
+  if (scanUrl) parts.push('Page URL: ' + scanUrl);
+  if (scanText) parts.push('Visible page text: ' + scanText);
+
+  ask(parts.join('\n'), []);
+  history.replaceState(null, '', location.pathname);
+})();
 </script>
 </body>
 </html>
