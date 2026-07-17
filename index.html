@@ -103,6 +103,19 @@
   .diary-act.dl:hover{color:#fff;}
   .diary-act.clear:hover{color:#ff8a8a;}
   .diary-sum{font-size:13.5px;color:var(--diary-ink-soft);margin:0 0 12px;}
+  /* Dashboard summary: stat cards + safety gauge, sits above the thermometer/list */
+  .dash-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 18px;}
+  .dash-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 14px;}
+  .dash-label{font-size:11px;color:var(--diary-ink-soft);margin-bottom:5px;}
+  .dash-value{font-size:20px;font-weight:600;color:var(--diary-ink);font-family:'Newsreader',serif;}
+  .dash-value.ok{color:#7BE0AA;}
+  .dash-value.warn{color:#FFC98A;}
+  .gauge-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:18px;margin-bottom:16px;}
+  .gauge-num{text-align:center;flex:none;}
+  .gauge-num .n{font-size:30px;font-weight:600;font-family:'Newsreader',serif;color:var(--diary-ink);}
+  .gauge-num .s{font-size:10.5px;color:var(--diary-ink-soft);margin-top:2px;}
+  .gauge-text{font-size:12.5px;color:var(--diary-ink-soft);line-height:1.5;}
+  .gauge-text b{color:var(--diary-ink);font-weight:600;}
   .thermo{display:flex;height:12px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.12);margin-bottom:6px;}
   .thermo span{display:block;height:100%;}
   .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--diary-ink-soft);margin-bottom:14px;}
@@ -228,6 +241,41 @@
       </div>
     </div>
     <p class="diary-sum" id="diarySum"></p>
+
+    <div class="dash-row">
+      <div class="dash-card">
+        <div class="dash-label">Checked</div>
+        <div class="dash-value" id="dashChecked">0</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-label">Flagged</div>
+        <div class="dash-value" id="dashFlagged">0</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-label">Status</div>
+        <div class="dash-value" id="dashStatus">—</div>
+      </div>
+    </div>
+
+    <div class="gauge-card">
+      <svg width="110" height="66" viewBox="0 0 150 90" style="flex:none">
+        <path d="M15,80 A60,60 0 0,1 135,80" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="14" stroke-linecap="round"/>
+        <path id="gaugeArc" d="M15,80 A60,60 0 0,1 135,80" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round"/>
+        <defs>
+          <linearGradient id="gaugeGrad" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0%" stop-color="#FF6B6B"/>
+            <stop offset="50%" stop-color="#FFB74D"/>
+            <stop offset="100%" stop-color="#5CE0A0"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="gauge-num">
+        <div class="n" id="gaugeScore">—</div>
+        <div class="s">safety score</div>
+      </div>
+      <div class="gauge-text" id="gaugeText"></div>
+    </div>
+
     <div class="thermo" id="thermo"></div>
     <div class="legend">
       <span><i style="background:#FF6B6B"></i>Scam</span>
@@ -303,6 +351,12 @@ const fileInput=document.getElementById('file');
 const attachWrap=document.getElementById('attachments');
 const diary=document.getElementById('diary');
 const diarySum=document.getElementById('diarySum');
+const dashChecked=document.getElementById('dashChecked');
+const dashFlagged=document.getElementById('dashFlagged');
+const dashStatus=document.getElementById('dashStatus');
+const gaugeScore=document.getElementById('gaugeScore');
+const gaugeArc=document.getElementById('gaugeArc');
+const gaugeText=document.getElementById('gaugeText');
 const thermo=document.getElementById('thermo');
 const recent=document.getElementById('recent');
 const diaryClear=document.getElementById('diaryClear');
@@ -637,6 +691,21 @@ function renderDiary(){
     (flagged===0
       ? 'None turned out to be clear scams so far.'
       : flagged + (flagged===1?' was':' were') + ' a scam or worth being careful with.');
+
+  // dashboard: stat cards + safety gauge, derived from the same counts above
+  const score = total ? Math.round((total-flagged)/total*100) : 100;
+  const healthy = flagged===0 || (flagged/total) < 0.3;
+  dashChecked.textContent = total;
+  dashFlagged.textContent = flagged;
+  dashStatus.textContent = healthy ? 'Healthy' : 'Needs attention';
+  dashStatus.className = 'dash-value ' + (healthy ? 'ok' : 'warn');
+
+  gaugeScore.textContent = score;
+  const R = 60, arcLen = Math.PI*R;
+  gaugeArc.style.strokeDasharray = (arcLen*score/100) + ' ' + arcLen;
+  gaugeText.innerHTML = healthy
+    ? '<b>Looking good.</b> Most of what you\u2019ve checked came back clear.'
+    : '<b>Worth a closer look.</b> Several recent checks came back risky.';
 
   thermo.innerHTML='';
   const thermoColors={scam:'#FF6B6B',likely:'#FFB74D',safe:'#5CE0A0',unsure:'#A9A5D9'};
