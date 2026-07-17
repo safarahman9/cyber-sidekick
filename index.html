@@ -685,7 +685,8 @@ function renderDiary(){
   const week=log.filter(e=>(e.lastAt||e.t)>=weekAgo).length;
 
   const flagged=counts.scam+counts.likely;
-  const weekFlagged=log.filter(e=>(e.lastAt||e.t)>=weekAgo && (e.risk==='scam'||e.risk==='likely')).length;
+  const last7=log.slice(-7);
+  const weekFlagged=last7.filter(e=>e.risk==='scam'||e.risk==='likely').length;
   diarySum.textContent =
     'You\u2019ve checked ' + total + (total===1?' thing':' things') +
     ' (' + week + ' in the last 7 days). ' +
@@ -705,8 +706,8 @@ function renderDiary(){
   const R = 60, arcLen = Math.PI*R;
   gaugeArc.style.strokeDasharray = (arcLen*score/100) + ' ' + arcLen;
   gaugeText.innerHTML = healthy
-    ? '<b>Looking good.</b> ' + (weekFlagged===0 ? 'Nothing risky this week.' : 'Only ' + weekFlagged + ' risky check this week.')
-    : '<b>Worth a closer look.</b> ' + weekFlagged + ' risky checks came in this week.';
+    ? '<b>Looking good.</b> ' + (weekFlagged===0 ? 'Nothing risky in your last 7 checks.' : 'Only ' + weekFlagged + ' risky in your last 7 checks.')
+    : '<b>Worth a closer look.</b> ' + weekFlagged + ' of your last 7 checks came back risky.';
 
   thermo.innerHTML='';
   const thermoColors={scam:'#FF6B6B',likely:'#FFB74D',safe:'#5CE0A0',unsure:'#A9A5D9'};
