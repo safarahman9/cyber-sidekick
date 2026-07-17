@@ -694,12 +694,15 @@ function renderDiary(){
       ? 'None turned out to be clear scams so far.'
       : flagged + (flagged===1?' was':' were') + ' a scam or worth being careful with.');
 
-  // dashboard: stat cards + safety gauge, all driven by the last 7 checks
-  const scoreBase = Math.min(total,7);
-  const score = scoreBase ? Math.round((scoreBase-weekFlagged)/scoreBase*100) : 100;
+  // dashboard: stat cards + safety gauge
+  // score: severity-weighted average across the ENTIRE log (scam hurts more than likely)
+  const scorePoints={scam:0, likely:50, unsure:75, safe:100};
+  const score = total
+    ? Math.round(log.reduce((sum,e)=>sum+(scorePoints[e.risk]??75),0)/total)
+    : 100;
   const healthy = weekFlagged < 2;
-  dashChecked.textContent = scoreBase;
-  dashFlagged.textContent = weekFlagged;
+  dashChecked.textContent = total;
+  dashFlagged.textContent = flagged;
   dashStatus.textContent = healthy ? 'Healthy' : 'Needs attention';
   dashStatus.className = 'dash-value ' + (healthy ? 'ok' : 'warn');
 
