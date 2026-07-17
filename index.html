@@ -685,6 +685,7 @@ function renderDiary(){
   const week=log.filter(e=>(e.lastAt||e.t)>=weekAgo).length;
 
   const flagged=counts.scam+counts.likely;
+  const weekFlagged=log.filter(e=>(e.lastAt||e.t)>=weekAgo && (e.risk==='scam'||e.risk==='likely')).length;
   diarySum.textContent =
     'You\u2019ve checked ' + total + (total===1?' thing':' things') +
     ' (' + week + ' in the last 7 days). ' +
@@ -694,7 +695,7 @@ function renderDiary(){
 
   // dashboard: stat cards + safety gauge, derived from the same counts above
   const score = total ? Math.round((total-flagged)/total*100) : 100;
-  const healthy = flagged===0 || (flagged/total) < 0.3;
+  const healthy = weekFlagged < 2;
   dashChecked.textContent = total;
   dashFlagged.textContent = flagged;
   dashStatus.textContent = healthy ? 'Healthy' : 'Needs attention';
@@ -704,8 +705,8 @@ function renderDiary(){
   const R = 60, arcLen = Math.PI*R;
   gaugeArc.style.strokeDasharray = (arcLen*score/100) + ' ' + arcLen;
   gaugeText.innerHTML = healthy
-    ? '<b>Looking good.</b> Most of what you\u2019ve checked came back clear.'
-    : '<b>Worth a closer look.</b> Several recent checks came back risky.';
+    ? '<b>Looking good.</b> ' + (weekFlagged===0 ? 'Nothing risky this week.' : 'Only ' + weekFlagged + ' risky check this week.')
+    : '<b>Worth a closer look.</b> ' + weekFlagged + ' risky checks came in this week.';
 
   thermo.innerHTML='';
   const thermoColors={scam:'#FF6B6B',likely:'#FFB74D',safe:'#5CE0A0',unsure:'#A9A5D9'};
