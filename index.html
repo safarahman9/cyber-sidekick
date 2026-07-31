@@ -200,11 +200,11 @@
   .legend i{width:8px;height:8px;border-radius:50%;display:inline-block;}
   .recent::-webkit-scrollbar{width:6px;}
   .recent::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:999px;}
-  .entry{display:flex;align-items:flex-start;gap:9px;font-size:13px;padding:9px 10px;margin:4px 0;border-radius:8px;cursor:pointer;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.14);text-align:left;width:100%;font-family:inherit;color:inherit;}
-  .entry:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.28);}
-  .entry .edot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;}
-  .entry .etext{color:var(--diary-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
-  .entry .ewhen{color:var(--diary-ink-soft);font-size:11.5px;margin-left:auto;flex:none;}
+  .entry{display:flex;align-items:center;gap:12px;font-size:13.5px;padding:12px 14px;margin:6px 0;border-radius:10px;cursor:pointer;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.13);text-align:left;width:100%;font-family:inherit;color:inherit;transition:.15s;}
+  .entry:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.3);}
+  .entry .etag{flex:none;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.04em;padding:4px 8px;border-radius:5px;min-width:52px;text-align:center;}
+  .entry .etext{color:var(--diary-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-weight:500;}
+  .entry .ewhen{color:var(--diary-ink-soft);font-size:11.5px;margin-left:auto;flex:none;font-family:'JetBrains Mono',monospace;}
   .diary-note{font-size:11.5px;color:var(--diary-ink-soft);margin:12px 0 0;}
 
   /* Visited sites: full-width lavender-tinted block, sits directly under the diary block */
@@ -850,20 +850,26 @@ function renderDiary(){
   });
 
   recent.innerHTML='';
-  const colors={scam:'#FF6B6B',likely:'#FFB74D',safe:'#5CE0A0',unsure:'#A9A5D9'};
+  const tagBg={scam:'rgba(255,107,107,.2)', likely:'rgba(255,183,77,.2)', safe:'rgba(92,224,160,.2)', unsure:'rgba(169,165,217,.2)'};
+  const tagFg={scam:'#FF9B9B', likely:'#FFC97A', safe:'#7BE6AA', unsure:'#C7C4EA'};
+  const tagLabel={scam:'SCAM', likely:'LIKELY', safe:'SAFE', unsure:'UNSURE'};
   log.slice().reverse().forEach(entry=>{
     const row=document.createElement('button');
     row.type='button';
     row.className='entry';
     row.dataset.id=entry.id;
-    const dot=document.createElement('span');
-    dot.className='edot'; dot.style.background=colors[entry.risk]||colors.unsure;
+    const tag=document.createElement('span');
+    tag.className='etag';
+    const r=entry.risk||'unsure';
+    tag.textContent=tagLabel[r]||'UNSURE';
+    tag.style.background=tagBg[r]||tagBg.unsure;
+    tag.style.color=tagFg[r]||tagFg.unsure;
     const t=document.createElement('span');
     t.className='etext';
     t.textContent = entry.q || '(screenshot)';
     const w=document.createElement('span');
     w.className='ewhen'; w.textContent=whenLabel(entry.t);
-    row.appendChild(dot); row.appendChild(t); row.appendChild(w);
+    row.appendChild(tag); row.appendChild(t); row.appendChild(w);
     recent.appendChild(row);
   });
 }
