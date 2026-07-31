@@ -8,16 +8,18 @@
 //    only ever sees a URL string. It never fetches or reads page content
 //    for this automatic path, that's reserved for the on-demand "Scan this
 //    page" button and the chat's own link inspection.
-// 3. Nothing is stored. No list of visited sites is written to
-//    chrome.storage, a database, or anywhere else. The only thing kept is
-//    the current tab's badge (a small icon indicator), which is not a
-//    persistent record, it just reflects the most recent check and is
-//    cleared on the next navigation.
+// 3. The badge and the small per-tab result used to explain it in the
+//    popup live only in chrome.storage.session, which Chrome keeps in
+//    memory only, never written to disk, and is wiped automatically when
+//    the browser closes. There is still no persistent record of browsing
+//    history anywhere, this is just enough to answer "why did you flag
+//    this?" for the tab that's open right now.
 // 4. EXCLUDE_HOSTS mirrors the same list in popup.js, banking, government,
 //    and major identity providers are never checked automatically, even
 //    with the toggle on.
 
 const STORAGE_KEY = 'autoCheckEnabled';
+const RESULT_PREFIX = 'tabResult_';
 const CHECK_ENDPOINT = 'https://unique-khapse-3e711e.netlify.app/.netlify/functions/site-check';
 
 const EXCLUDE_HOSTS = [
@@ -37,20 +39,25 @@ async function isEnabled() {
   return !!stored[STORAGE_KEY];
 }
 
-async function clearBadge(tabId) {
+async function clearResult(tabId) {
   try { await chrome.action.setBadgeText({ tabId, text: '' }); } catch (e) { /* tab may be closed */ }
+  try { await chrome.storage.session.remove(RESULT_PREFIX + tabId); } catch (e) { /* ignore */ }
 }
 
-async function setWarningBadge(tabId) {
+async function setFlaggedResult(tabId, url, threats) {
   try {
     await chrome.action.setBadgeText({ tabId, text: '!' });
     await chrome.action.setBadgeBackgroundColor({ tabId, color: '#C5221F' });
+    await chrome.action.setTitle({ tabId, title: 'Cyber Sidekick: this site is flagged, click for details' });
   } catch (e) { /* tab may be closed */ }
+  try {
+    await chrome.storage.session.set({ [RESULT_PREFIX + tabId]: { url, threats: threats || [], t: Date.now() } });
+  } catch (e) { /* ignore */ }
 }
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status !== 'complete' || !tab.url) return;
-  await clearBadge(tabId);
+  await clearResult(tabId);
 
   if (!(await isEnabled())) return;
 
@@ -73,11 +80,17 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     });
     const data = await res.json();
     if (data && data.flagged) {
-      await setWarningBadge(tabId);
+      await setFlaggedResult(tabId, tab.url, data.threats);
     }
   } catch (e) {
     // Network hiccup or function unavailable, fail silently, never block
     // browsing or show an error for a background check the person can't
     // directly see happening.
   }
+});
+
+// Also clear the stored result once a tab closes, so nothing lingers even
+// in session storage past the tab's own lifetime.
+chrome.tabs.onRemoved.addListener((tabId) => {
+  chrome.storage.session.remove(RESULT_PREFIX + tabId).catch(() => {});
 });
