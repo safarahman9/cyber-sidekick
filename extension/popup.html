@@ -4,18 +4,33 @@
 <meta charset="UTF-8">
 <title>Cyber Sidekick</title>
 <style>
-  html, body { margin: 0; padding: 0; width: 400px; height: 580px; background: #FBFAF8; overflow: hidden; }
-  iframe { width: 100%; height: 100%; border: none; display: block; }
-  .fallback { display: none; padding: 20px; font-family: system-ui, sans-serif; font-size: 13px; color: #55556A; line-height: 1.5; }
+  html, body { margin: 0; padding: 0; width: 400px; height: 616px; background: #FBFAF8; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; }
+  .scanbar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #FBFAF8; border-bottom: 1px solid #ECEAE5; }
+  .scanbtn { flex: 1; background: #3F3D9E; color: #fff; border: none; padding: 9px 12px; border-radius: 9px; font-weight: 600; font-size: 12.5px; cursor: pointer; font-family: inherit; }
+  .scanbtn:hover { background: #332f8a; }
+  .scanbtn:disabled { opacity: .55; cursor: default; }
+  .scannote { font-size: 10.5px; color: #9A9AAB; padding: 0 12px 8px; line-height: 1.4; }
+  iframe { width: 100%; height: 542px; border: none; display: block; }
 </style>
 </head>
 <body>
   <!--
-    The popup is a thin shell that loads the live Cyber Sidekick PWA in an
-    iframe. This keeps a single source of truth: the chat logic, risk diary,
-    and every future update all live in the deployed site, not duplicated
-    here. Swap SITE_URL below if the Netlify deployment URL ever changes.
+    The main body is a thin shell that loads the live Cyber Sidekick PWA in
+    an iframe, keeping one source of truth for the chat logic and diary.
+
+    The "Scan this page" button is the one piece of real extension-only
+    functionality: it uses the activeTab permission, which Chrome only
+    grants for the current tab, only for the moment the person clicks it.
+    There is no background script and no host_permissions here, so this
+    extension has no standing access to browsing activity at all between
+    clicks. Nothing is read unless the person explicitly asks for it.
   -->
+  <div class="scanbar">
+    <button class="scanbtn" id="scanBtn">Scan this page</button>
+  </div>
+  <div class="scannote" id="scanNote">Reads the current tab's URL, title, and visible text only when you click, nothing is read automatically.</div>
   <iframe id="app" src="https://unique-khapse-3e711e.netlify.app/" title="Cyber Sidekick"></iframe>
+
+  <script src="popup.js"></script>
 </body>
 </html>
