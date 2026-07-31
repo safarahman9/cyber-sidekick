@@ -8,10 +8,10 @@
 <meta name="theme-color" content="#3F3D9E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#FBFAF8; --ink:#1A1A2B; --ink-soft:#55556A; --muted:#9A9AAB;
+    --bg:#FBFAF8; --ink:#1A1A2B; --ink-soft:#55556A; --muted:#6E6E82;
     --line:#ECEAE5; --accent:#3F3D9E; --card:#FFFFFF;
     --msg:15.5px;
     --r-scam:#C5221F; --r-likely:#B26A00; --r-safe:#1E7A3D; --r-unsure:#6B6B7B;
@@ -20,11 +20,11 @@
   html{scroll-behavior:smooth;}
   body{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;}
   body.large{--msg:18px;font-size:19px;}
-  .page{max-width:600px;margin:0 auto;padding:0 24px;}
+  .page{max-width:760px;margin:0 auto;padding:0 24px;}
 
   /* Sticky site nav: logo, section links, CTA */
-  .tabnav{position:sticky;top:0;z-index:50;background:rgba(251,250,248,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);}
-  .tabnav .page{padding:13px 24px;}
+  .tabnav{position:sticky;top:0;z-index:50;background:var(--bg);}
+  .tabnav .page{max-width:1180px;padding:13px 24px;}
   .navrow{display:flex;align-items:center;justify-content:space-between;gap:16px;}
   .navbrand{display:flex;align-items:center;gap:9px;flex:none;}
   .navbrand .shield{width:22px;height:25px;flex:none;}
@@ -35,18 +35,68 @@
   .tab-btn:disabled{opacity:.4;cursor:default;}
   .nav-cta{flex:none;background:var(--accent);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-weight:600;font-size:13.5px;cursor:pointer;font-family:inherit;white-space:nowrap;}
   .nav-cta:hover{background:#332f8a;}
-  @media (max-width:560px){.navlinks{display:none;}}
+  @media (max-width:640px){.navlinks{display:none;}}
 
   header{display:flex;align-items:center;gap:10px;padding:40px 0 0;}
   header .shield{width:24px;height:27px;}
   header .mark{font-family:'Newsreader',serif;font-weight:500;font-size:19px;letter-spacing:-.01em;}
 
-  .intro{padding:40px 0 30px;}
-  h1{font-family:'Newsreader',serif;font-weight:400;font-size:33px;line-height:1.18;letter-spacing:-.015em;margin:0 0 14px;}
-  .intro p{font-size:18px;color:var(--ink-soft);margin:0;max-width:46ch;}
+  /* Techy eyebrow label, used above the hero and section headers */
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:16px;}
+  .eyebrow-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none;box-shadow:0 0 0 4px rgba(63,61,158,.14);}
+  .section-eyebrow{font-family:'JetBrains Mono',monospace;font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;}
+  .diary .section-eyebrow{color:var(--diary-ink-soft);}
 
-  .audience{margin:0 0 14px;}
-  .audience .label{font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;}
+  /* Hero: full-width band, two-column on desktop */
+  .hero{position:relative;overflow:hidden;padding:56px 0 48px;}
+  .hero::before{content:'';position:absolute;inset:-25% -10%;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(ellipse 620px 520px at 12% 20%, rgba(63,61,158,.20), transparent 62%),
+      radial-gradient(ellipse 520px 480px at 88% 15%, rgba(255,183,77,.16), transparent 60%),
+      radial-gradient(ellipse 560px 520px at 70% 90%, rgba(63,61,158,.14), transparent 60%);
+    filter:blur(46px);}
+  .hero-wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:1.15fr 1fr;gap:52px;align-items:center;}
+  @media (max-width:900px){.hero-wrap{grid-template-columns:1fr;gap:36px;}}
+  .hero-h1{font-family:'Newsreader',serif;font-weight:400;font-size:52px;line-height:1.08;letter-spacing:-.02em;margin:0 0 20px;}
+  .hero-h1 .accent{color:var(--accent);}
+  .hero-sub{font-size:19px;color:var(--ink-soft);line-height:1.6;margin:0 0 30px;max-width:52ch;}
+  .hero-actions{display:flex;gap:12px;flex-wrap:wrap;}
+  .btn-primary{background:var(--accent);color:#fff;border:none;padding:15px 26px;border-radius:11px;font-weight:600;font-size:15.5px;cursor:pointer;font-family:inherit;}
+  .btn-primary:hover{background:#332f8a;}
+  .btn-secondary{background:transparent;color:var(--ink);border:1.5px solid var(--line);padding:15px 26px;border-radius:11px;font-weight:600;font-size:15.5px;cursor:pointer;font-family:inherit;}
+  .btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* Hero side panel: techy "what it catches" readout */
+  .feed-panel{position:relative;overflow:hidden;background:linear-gradient(160deg,#231F5C,#2E2878);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px 20px 16px;box-shadow:0 24px 48px rgba(35,31,92,.28);}
+  .scan-line{position:absolute;left:6%;right:6%;height:2px;top:4%;z-index:2;pointer-events:none;
+    background:linear-gradient(90deg, transparent, rgba(180,176,240,.95), transparent);
+    box-shadow:0 0 10px 2px rgba(147,143,230,.7), 0 0 26px 8px rgba(63,61,158,.4);
+    mix-blend-mode:screen;
+    animation:scanmove 3.6s ease-in-out infinite;}
+  @keyframes scanmove{
+    0%{top:4%; opacity:0;}
+    10%{opacity:1;}
+    50%{top:92%;}
+    88%{opacity:1;}
+    100%{top:96%; opacity:0;}
+  }
+  .feed-panel::before{content:'';position:absolute;top:-60px;right:-60px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(63,61,158,.55),transparent 70%);pointer-events:none;}
+  .feed-head{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#9E9CC7;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:6px;}
+  .feed-rows{position:relative;z-index:1;display:flex;flex-direction:column;}
+  .feed-row{display:flex;align-items:center;gap:11px;padding:11px 2px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#D8D7EE;border-bottom:1px solid rgba(255,255,255,.06);}
+  .feed-row:last-child{border-bottom:none;}
+  .feed-tag{flex:none;font-size:10.5px;font-weight:600;letter-spacing:.04em;padding:3px 8px;border-radius:5px;}
+  .feed-tag.scam{background:rgba(197,34,31,.22);color:#FF8C89;}
+  .feed-tag.likely{background:rgba(178,106,0,.22);color:#FFC167;}
+  .feed-tag.safe{background:rgba(30,122,61,.22);color:#7BE0AA;}
+  .feed-tag.unsure{background:rgba(255,255,255,.1);color:#B7B5DB;}
+  /* feed-foot removed: caption under the panel wasn't needed */
+
+  /* Stats bar: honest, product-level numbers, not fabricated telemetry */
+  /* stats bar removed */
+
+  .audience{margin:24px 0 14px;}
+  .audience .label{font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:9px;}
   .aud-chips{display:flex;flex-wrap:wrap;gap:7px;}
   .aud{font-size:13px;color:var(--ink-soft);background:var(--card);border:1px solid var(--line);padding:7px 13px;border-radius:999px;cursor:pointer;font-family:inherit;transition:.15s;}
   .aud:hover{border-color:var(--accent);}
@@ -59,7 +109,7 @@
   .bot{align-self:flex-start;color:var(--ink);white-space:pre-wrap;}
   .user{align-self:flex-end;background:var(--ink);color:#fff;padding:11px 15px;border-radius:14px;border-bottom-right-radius:4px;white-space:pre-wrap;}
 
-  .checked{margin-top:9px;font-size:12px;color:var(--muted);line-height:1.45;}
+  .checked{margin-top:9px;font-size:12px;font-weight:500;color:var(--muted);line-height:1.45;}
   .checked b{font-weight:600;color:var(--ink-soft);}
   .checked svg{vertical-align:-2px;margin-right:4px;}
 
@@ -102,7 +152,7 @@
 
   /* Full-bleed technique: breaks a section out of the centered 600px column to span the viewport */
   .fb{width:100vw;position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw;}
-  .fb-inner{max-width:600px;margin:0 auto;padding:28px 24px;}
+  .fb-inner{max-width:760px;margin:0 auto;padding:28px 24px;}
   .fb[hidden]{display:none;}
 
   /* Ways to launch: entry-point cards, sits in the narrow column under the chat card */
@@ -126,7 +176,7 @@
     margin-top:8px;
   }
   .diary-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px;}
-  .diary-head h2{font-family:'Newsreader',serif;font-weight:500;font-size:19px;margin:0;color:var(--diary-ink);}
+  .diary-head h2{font-family:'Newsreader',serif;font-weight:500;font-size:24px;margin:0;color:var(--diary-ink);}
   .diary-actions{display:flex;gap:14px;align-items:center;}
   .diary-act{font-size:12px;color:var(--diary-ink-soft);background:none;border:none;cursor:pointer;font-family:inherit;padding:0;}
   .diary-act.dl:hover{color:#fff;}
@@ -165,7 +215,7 @@
   .site-row .sbody{flex:1;min-width:0;}
   .site-row .shost{font-weight:600;font-size:13.5px;color:var(--ink);}
   .site-row .stitle{font-size:12px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .site-row .swhen{color:var(--muted);font-size:11.5px;flex:none;padding-top:1px;}
+  .site-row .swhen{color:var(--muted);font-size:11.5px;font-weight:500;flex:none;padding-top:1px;}
 
   /* Detail popup, shared by diary and site rows */
   .modal-overlay{position:fixed;inset:0;background:rgba(20,18,50,.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:1000;}
@@ -174,7 +224,7 @@
   .modal-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border:none;background:var(--bg);border-radius:50%;font-size:18px;color:var(--ink-soft);cursor:pointer;line-height:1;}
   .modal-close:hover{color:var(--ink);}
   .modal-badge{display:inline-block;font-size:12px;font-weight:600;padding:4px 11px;border-radius:999px;margin-bottom:12px;}
-  .modal-when{font-size:12px;color:var(--muted);margin-bottom:14px;}
+  .modal-when{font-size:12px;font-weight:500;color:var(--muted);margin-bottom:14px;}
   .modal-h{font-family:'Newsreader',serif;font-weight:500;font-size:17px;margin:18px 0 6px;}
   .modal-h:first-of-type{margin-top:0;}
   .modal-text{font-size:14px;color:var(--ink);line-height:1.6;white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
@@ -193,9 +243,9 @@
   .modal-site-chip a{color:var(--accent);font-size:12px;text-decoration:none;word-break:break-all;}
   .modal-link:hover{text-decoration:underline;}
 
-  footer{font-size:12.5px;color:var(--muted);line-height:1.6;padding:24px 2px 48px;}
+  footer{font-size:12.5px;font-weight:500;color:var(--muted);line-height:1.65;padding:24px 2px 48px;}
 
-  @media (max-width:520px){h1{font-size:28px;}.intro p{font-size:16.5px;}}
+  @media (max-width:520px){.hero-h1{font-size:36px;}.hero-sub{font-size:16.5px;}}
   @media (prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto;}}
 </style>
 </head>
@@ -212,7 +262,7 @@
       <button class="tab-btn" id="tabDiary" data-target="diary" disabled>Diary</button>
       <button class="tab-btn" id="tabSites" data-target="sitesBlock" disabled>Sites</button>
     </div>
-    <button class="nav-cta" data-target="top">Check a message</button>
+    <button class="nav-cta" data-target="checker">Check a message</button>
   </div>
 </nav>
 
@@ -223,12 +273,32 @@
   </symbol>
 </svg>
 
-<div class="page">
-  <section class="intro">
-    <h1>Got a text, email, or call that feels off?</h1>
-    <p>Paste it below, or add a screenshot. I'll tell you straight if it's a scam, and exactly what to do next.</p>
-  </section>
+<section class="hero">
+  <div class="hero-wrap">
+    <div class="hero-copy">
+      <div class="eyebrow"><span class="eyebrow-dot"></span>AI-Powered Scam Detection</div>
+      <h1 class="hero-h1">Catch the scam<br><span class="accent">before you click.</span></h1>
+      <p class="hero-sub">Paste it, screenshot it, share it in. One verdict, seconds flat, zero jargon.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" data-target="checker">Check a message</button>
+        <button class="btn-secondary" data-target="launch">See how it works</button>
+      </div>
+    </div>
+    <div class="feed-panel">
+      <div class="scan-line" aria-hidden="true"></div>
+      <div class="feed-head"><span>cyber-sidekick.ai</span><span>audience: adaptive</span></div>
+      <div class="feed-rows">
+        <div class="feed-row"><span class="feed-tag scam">SCAM</span>CRA refund link, lookalike domain</div>
+        <div class="feed-row"><span class="feed-tag scam">SCAM</span>Grandparent bail request, gift cards</div>
+        <div class="feed-row"><span class="feed-tag likely">LIKELY</span>e-Transfer, countdown pressure</div>
+        <div class="feed-row"><span class="feed-tag safe">SAFE</span>Verified sender, no urgency, no ask</div>
+        <div class="feed-row"><span class="feed-tag unsure">UNSURE</span>New domain, thin evidence either way</div>
+      </div>
+    </div>
+  </div>
+</section>
 
+<div class="page" id="checker">
   <div class="audience">
     <div class="label">Who is this for?</div>
     <div class="aud-chips" id="aud">
@@ -263,6 +333,7 @@
   </div>
 
   <section class="launch" id="launch">
+    <div class="section-eyebrow">Entry Points</div>
     <h2>Other ways to use it</h2>
     <p class="launch-sub">Same checker underneath, pick whatever fits how you actually run into these messages.</p>
     <div class="launch-grid">
@@ -294,6 +365,7 @@
 
 <section class="fb diary" id="diary" hidden>
   <div class="fb-inner">
+    <div class="section-eyebrow">Pattern Log</div>
     <div class="diary-head">
       <h2>Your risk diary</h2>
       <div class="diary-actions">
@@ -336,6 +408,7 @@
 
 <section class="fb sites-block" id="sitesBlock" hidden>
   <div class="fb-inner">
+    <div class="section-eyebrow" style="color:var(--accent)">Site History</div>
     <div class="diary-head">
       <h2>Visited sites</h2>
       <button class="diary-act clear" id="sitesClear">Clear</button>
