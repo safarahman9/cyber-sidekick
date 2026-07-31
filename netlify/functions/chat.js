@@ -100,14 +100,77 @@ async function safeBrowsingCheck(urls) {
   }
 }
 
+// Fetch a link's static HTML server-side and pull out its title, meta
+// description, and redirect chain, the same idea Nishaanth's tool does by
+// right-clicking and scanning ahead of the person. Same known blind spot he
+// flagged in the client meeting though: this only sees the initial HTML
+// response, nothing that only appears after JavaScript runs client-side.
+// Safeguards: only ever called on links Safe Browsing hasn't already flagged
+// (no reason to touch a known-bad URL further), capped to 2 links per
+// message, a 5-second timeout, and a ~60KB read cap so a huge or slow page
+// can't stall the person's answer.
+async function inspectUrl(url) {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      signal: controller.signal,
+      headers: { "user-agent": "Mozilla/5.0 (compatible; CyberSidekickLinkCheck/1.0)" }
+    });
+    clearTimeout(timeout);
+    const finalUrl = res.url || url;
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.includes("text/html")) {
+      return { url, finalUrl, redirected: finalUrl !== url, status: res.status, title: null, description: null, nonHtml: true };
+    }
+    let html = "";
+    if (res.body && res.body.getReader) {
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let total = 0;
+      while (total < 60000) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        html += decoder.decode(value, { stream: true });
+        total += value.length;
+      }
+      try { reader.cancel(); } catch (e) { /* stream already closed */ }
+    } else {
+      html = await res.text();
+    }
+    const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+    const descMatch =
+      html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i) ||
+      html.match(/<meta[^>]+content=["']([^"']*)["'][^>]+name=["']description["']/i);
+    return {
+      url, finalUrl, status: res.status, redirected: finalUrl !== url,
+      title: titleMatch ? titleMatch[1].trim().slice(0, 200) : null,
+      description: descMatch ? descMatch[1].trim().slice(0, 300) : null
+    };
+  } catch (e) {
+    return { url, finalUrl: url, error: true };
+  }
+}
+
+async function inspectLinks(urls, safeBrowsingMatches) {
+  const flagged = new Set((safeBrowsingMatches || []).map((m) => m.threat && m.threat.url).filter(Boolean));
+  const toInspect = urls.filter((u) => !flagged.has(u)).slice(0, 2);
+  if (!toInspect.length) return [];
+  return Promise.all(toInspect.map(inspectUrl));
+}
+
 const AUDIENCE = {
+
+
   me: "an adult checking something for themselves",
   senior: "a senior. Slow down a little. Short, plain sentences and a calm, warm tone, like you are sitting right beside them. No jargon; if you have to use a word like phishing, explain it in a few plain words",
   youth: "a young person. Keep it casual and real, the way you would text a friend who asked. No lecturing, no parent voice. A little dry humour is fine",
   educator: "an educator. Give them the clear breakdown, then add one short line they could say to a class to explain the giveaway"
 };
 
-function buildSystem(mode, safeBrowsing) {
+function buildSystem(mode, safeBrowsing, linkInspections) {
   const audience = AUDIENCE[mode] || AUDIENCE.me;
 
   let sbBlock = "";
@@ -120,6 +183,21 @@ function buildSystem(mode, safeBrowsing) {
     }
   }
 
+  let linkBlock = "";
+  if (linkInspections && linkInspections.length) {
+    const lines = linkInspections.map((r) => {
+      if (r.error) return `${r.url}: could not be reached (could be offline, blocking automated requests, or just slow, that is inconclusive, not reassuring)`;
+      if (r.nonHtml) return `${r.url}: returned a non-HTML response (status ${r.status})${r.redirected ? `, redirected to ${r.finalUrl}` : ""}`;
+      let line = r.url;
+      if (r.redirected) line += ` (redirected to ${r.finalUrl})`;
+      if (r.title) line += `, page title: "${r.title}"`;
+      if (r.description) line += `, meta description: "${r.description}"`;
+      if (!r.title && !r.description) line += `, no readable title or description in the static HTML (could be a JavaScript-rendered page, a bare redirect, or a bot-blocking page, treat as inconclusive, not a good sign on its own)`;
+      return line;
+    });
+    linkBlock = `\nLINK INSPECTION (server fetched the raw static HTML of the link before you saw this, no JavaScript was executed, so anything that only appears after JavaScript runs client-side will not show up here, do not treat an empty result as reassuring):\n${lines.join("\n")}\n`;
+  }
+
   return `You are Cyber Sidekick. Think of yourself as that one friend who happens to know a lot about scams, the person someone texts a screenshot to and asks "is this real?" You are calm, warm, and quick to reassure, because you have seen these a hundred times and they do not rattle you. You are never preachy, never robotic, never alarmist. Your knowledge follows the Canadian Anti-Fraud Centre (CAFC).
 
 You are an AI, not a human, and you never pretend otherwise. If someone asks, just say so plainly. You are genuinely warm and helpful without faking emotions or claiming to remember someone you have not met.
@@ -127,7 +205,7 @@ You are an AI, not a human, and you never pretend otherwise. If someone asks, ju
 You remember this conversation. Earlier messages are included, so refer back to them naturally and do not ask for something the person already told you.
 
 Right now you are helping ${audience}.
-${sbBlock}
+${sbBlock}${linkBlock}
 ${CAFC_REFERENCE}
 
 WHEN A SCREENSHOT OR FILE IS SHARED:
@@ -212,6 +290,7 @@ exports.handler = async (event) => {
 
     const candidateUrls = extractUrls(lastUserText(messages));
     const safeBrowsing = await safeBrowsingCheck(candidateUrls);
+    const linkInspections = await inspectLinks(candidateUrls, safeBrowsing.matches);
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -223,7 +302,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
         max_tokens: 1024, // raise if you want longer answers (web search results count as input, not output)
-        system: buildSystem(mode, safeBrowsing),
+        system: buildSystem(mode, safeBrowsing, linkInspections),
         messages,
         tools: [{
           type: "web_search_20250305",
@@ -265,6 +344,10 @@ exports.handler = async (event) => {
     // real verification, not just the model's own reasoning.
     if (safeBrowsing.checked) {
       sources.unshift(safeBrowsing.matches.length ? "Google Safe Browsing (flagged)" : "Google Safe Browsing");
+    }
+    if (linkInspections.length) {
+      const reached = linkInspections.some((r) => !r.error);
+      sources.unshift(reached ? "Link page inspected (static HTML)" : "Link inspection attempted (unreachable)");
     }
 
     // With web search the reply may contain tool-use blocks; keep only the text blocks.
