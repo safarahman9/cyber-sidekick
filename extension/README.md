@@ -1,7 +1,7 @@
-# Cyber Sidekick Browser Extension (free, unpacked)
+# Cyber Sidekick — Browser Extension (free, unpacked)
 
 This is a minimal browser extension shell. It doesn't duplicate any of the
-chat, diary, or scan logic, the popup just loads the live deployed PWA
+chat, diary, or scan logic — the popup just loads the live deployed PWA
 (`https://unique-khapse-3e711e.netlify.app/`) in an iframe. One codebase,
 two entry points: the website and the toolbar icon.
 
@@ -12,7 +12,7 @@ two entry points: the website and the toolbar icon.
 2. Turn on **Developer mode** (top-right toggle)
 3. Click **Load unpacked**
 4. Select this `extension` folder
-5. The Cyber Sidekick icon appears in your toolbar, click it to open the popup
+5. The Cyber Sidekick icon appears in your toolbar — click it to open the popup
 
 **Firefox:**
 1. Go to `about:debugging#/runtime/this-firefox`
@@ -26,34 +26,36 @@ a live demo just re-load it right before presenting.
 ## What this version does and doesn't do
 
 - **Does:** gives one-click access to the full checker from the browser
-  toolbar, on any page. As of v1.1.0, it also has a **"Scan this page"**
-  button that reads the current tab's URL, title, and visible text on
-  demand and runs it through the same checker.
-- **How the scan is kept safe, on purpose:**
-  - Uses only the `activeTab` permission, Chrome grants this for the
-    current tab only, only for the moment you click, it expires the
-    instant the popup closes. There is no `content_scripts` and no
-    `host_permissions`, so nothing runs automatically in the background
-    and nothing persists between clicks.
-  - A hardcoded exclude list (`popup.js` → `EXCLUDE_HOSTS`) blocks
-    scanning on banking sites, government/tax sites, and major identity
-    providers (Google, Microsoft, Apple, PayPal accounts) even when the
-    button is clicked. This list is a starting point, not exhaustive,
-    extend it before relying on it beyond a demo.
-  - Only page URL, title, and up to ~2000 characters of visible text are
-    read, no form values, no cookies, no storage, no page HTML beyond
-    plain `innerText`.
-  - **Known limitation:** this reads the page as it exists in the DOM at
-    the moment you click, which covers JavaScript-rendered content (unlike
-    the server-side link inspection in `chat.js`, which only sees static
-    HTML). What it can't do is see content behind a login wall it doesn't
-    have your credentials for, or anything that loads after you click
-    away.
-  - If the team later wants this to run automatically as you browse
-    (rather than only on click), that requires `host_permissions` and a
-    background/content script, a meaningfully bigger and more sensitive
-    build, and worth deciding on as a team first since it starts to
-    overlap with what Christina's and Nishaanth's tools already do.
+  toolbar, on any page. Has a **"Scan this page"** button (v1.1.0) that
+  reads the current tab's URL, title, and visible text on demand. As of
+  **v1.2.0**, it also has an **"Automatically check sites I visit"** toggle,
+  **off by default**.
+- **The two-tier safety design, on purpose:**
+  - **Tier 1 — on-demand, content-reading** ("Scan this page" button, or
+    pasting into chat): reads URL, title, and page text, only when
+    explicitly triggered.
+  - **Tier 2 — automatic, domain-only** (the toggle, when turned on): a
+    background script (`background.js`) checks each new page's URL against
+    Google Safe Browsing only. It never fetches or reads the page itself
+    for this path. This distinction is deliberate: automatic, all-the-time
+    checking should be the lightest-touch check available, full content
+    reading stays reserved for moments the person explicitly asked for it.
+  - **Nothing is stored anywhere.** No list of visited sites, no logs, no
+    database. The only extension-side "state" is a small badge icon
+    reflecting the most recent check, cleared on every new page load.
+  - The exclude list (banking, government, major identity providers) is
+    checked before both tiers, even with the toggle on, those sites are
+    never automatically checked.
+  - **Known trade-off:** enabling the toggle requires Chrome's broad
+    `host_permissions` grant, which shows the standard "read and change all
+    your data on the websites you visit" warning at install. That's a real,
+    unavoidable cost of any automatic (not click-triggered) checking, which
+    is exactly why it defaults to off and is a separate opt-in toggle
+    rather than always-on behavior.
+  - If the team wants automatic checking to also read page content (not
+    just the domain), that's a meaningfully bigger privacy and trust
+    decision, and worth deciding on as a team first, since it starts to
+    overlap more with what Christina's and Nishaanth's tools already do.
 
 ## If you want it in the actual Chrome Web Store or Firefox Add-ons later
 
