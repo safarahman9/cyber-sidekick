@@ -1,19 +1,22 @@
-// popup.js — runs the "Scan this page" button.
+// popup.js — runs the "Scan this page" button and the auto-check toggle.
 //
 // SAFEGUARDS (read this before changing anything):
-// 1. Nothing runs until the person clicks the button. There is no
-//    background listener, no content script injected on every page load.
-// 2. Uses `activeTab`, not a broad host permission. Chrome only grants
-//    access to the current tab, only for this user gesture, it expires
-//    the moment the popup closes.
+// 1. "Scan this page" only runs on click, using `activeTab`, access to the
+//    current tab only, only for this user gesture, gone the moment the
+//    popup closes.
+// 2. The "Automatically check sites I visit" toggle below is OFF by
+//    default. Turning it on only enables background.js's domain-reputation
+//    check (Safe Browsing), it does NOT enable page-content reading, that
+//    stays reserved for explicit actions (this button, or pasting into
+//    chat).
 // 3. EXCLUDE_HOSTS below is a starting list of sensitive destinations
 //    (banking, government login, major identity providers) that are
 //    never scanned automatically, even on click. This list is illustrative,
 //    not exhaustive — extend it before relying on it for anything beyond a
 //    demo. When a page matches, the button explains why and stops.
-// 4. Only URL, page title, and a short slice of visible text are read.
-//    No form field values, no cookies, no storage, no page HTML beyond
-//    plain innerText.
+// 4. Only URL, page title, and a short slice of visible text are read on
+//    click. No form field values, no cookies, no storage, no page HTML
+//    beyond plain innerText.
 
 const EXCLUDE_HOSTS = [
   // Canadian banks
@@ -82,4 +85,19 @@ scanBtn.addEventListener('click', async () => {
     scanBtn.disabled = false;
     scanBtn.textContent = originalLabel;
   }
+});
+
+/* ---------- automatic-check toggle (off by default) ---------- */
+// Reads/writes the same chrome.storage.local key background.js checks
+// before doing anything. Flipping this only ever changes whether the
+// domain-reputation check runs, it never enables page-content reading.
+const STORAGE_KEY = 'autoCheckEnabled';
+const autoToggle = document.getElementById('autoToggle');
+
+chrome.storage.local.get(STORAGE_KEY).then((stored) => {
+  autoToggle.checked = !!stored[STORAGE_KEY];
+});
+
+autoToggle.addEventListener('change', () => {
+  chrome.storage.local.set({ [STORAGE_KEY]: autoToggle.checked });
 });
