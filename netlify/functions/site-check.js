@@ -15,7 +15,7 @@
 
 async function safeBrowsingCheck(url) {
   const key = process.env.GOOGLE_SAFE_BROWSING_API_KEY;
-  if (!key || !url) return { checked: false, flagged: false };
+  if (!key || !url) return { checked: false, flagged: false, threats: [] };
   try {
     const res = await fetch(`https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${key}`, {
       method: "POST",
@@ -31,9 +31,11 @@ async function safeBrowsingCheck(url) {
       })
     });
     const data = await res.json();
-    return { checked: true, flagged: Array.isArray(data.matches) && data.matches.length > 0 };
+    const matches = Array.isArray(data.matches) ? data.matches : [];
+    const threats = [...new Set(matches.map((m) => m.threatType).filter(Boolean))];
+    return { checked: true, flagged: matches.length > 0, threats };
   } catch (e) {
-    return { checked: false, flagged: false };
+    return { checked: false, flagged: false, threats: [] };
   }
 }
 
