@@ -177,6 +177,10 @@
   .lc-title{font-weight:600;font-size:17px;color:var(--ink);letter-spacing:-.005em;}
   .lc-body{font-size:14.5px;color:var(--ink-soft);line-height:1.55;}
   .lc-btn{align-self:flex-start;margin-top:8px;font-size:13.5px;font-weight:500;color:#fff;background:var(--accent);border:none;padding:9px 16px;border-radius:9px;cursor:grab;text-decoration:none;font-family:inherit;}
+  .lc-sublink{align-self:flex-start;margin-top:8px;font-size:12.5px;font-weight:500;color:var(--accent);text-decoration:none;}
+  .lc-sublink:hover{text-decoration:underline;}
+  .launch-card.lc-clickable{cursor:pointer;}
+  .launch-card.lc-clickable:hover .lc-sublink{text-decoration:underline;}
   .lc-btn:hover{background:#332f8a;}
 
   /* Risk diary: full-width dark-purple block, distinct zone from the rest of the page */
@@ -327,6 +331,7 @@
         <div class="lc-title">Download / install the app</div>
         <div class="lc-body" id="lcInstallBody">Add it to your home screen or desktop so it opens on its own, no browser tab needed.</div>
         <button class="lc-btn" id="installBtn" hidden>Install</button>
+        <a class="lc-sublink" href="https://github.com/safarahman9/cyber-sidekick/tree/main/extension" target="_blank" rel="noopener noreferrer">Or get the browser extension →</a>
       </div>
       <div class="launch-card">
         <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg></div>
@@ -339,10 +344,11 @@
         <div class="lc-title">Share it in</div>
         <div class="lc-body">On your phone, hit Share on a message, screenshot, or link and pick Cyber Sidekick from the list.</div>
       </div>
-      <div class="launch-card">
+      <div class="launch-card lc-clickable" id="lcPasteCard" role="button" tabindex="0">
         <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3"/><path d="M9 12h6M9 16h6"/></svg></div>
         <div class="lc-title">Just paste it here</div>
         <div class="lc-body">No setup at all. Paste text or a screenshot into the box above. Works everywhere, including iPhone.</div>
+        <span class="lc-sublink">Go to the checker ↑</span>
       </div>
     </div>
   </div>
@@ -1210,6 +1216,20 @@ if(isStandalone){
     e.preventDefault();
     alert('Drag this button up to your bookmarks bar instead of clicking it. Then tap it any time you\u2019re on a page that feels off.');
   });
+})();
+
+// "Just paste it here" card: scrolls up to the actual checker and focuses
+// the input, so it's a real destination, not just descriptive text.
+(function setupPasteCard(){
+  const card=document.getElementById('lcPasteCard');
+  if(!card) return;
+  const go=()=>{
+    const checker=document.getElementById('checker');
+    if(checker) checker.scrollIntoView({behavior:'smooth', block:'start'});
+    setTimeout(()=>field.focus(), 400);
+  };
+  card.addEventListener('click', go);
+  card.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); go(); } });
 })();
 
 greet();
