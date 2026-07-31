@@ -156,7 +156,7 @@
   .fb[hidden]{display:none;}
 
   /* Ways to launch: entry-point cards, sits in the narrow column under the chat card */
-  .launch{padding:44px 0 8px;border-top:1px solid var(--line);margin-top:12px;}
+  .launch-band{background:#F3F1FB;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
   .launch h2{font-family:'Newsreader',serif;font-weight:500;font-size:30px;line-height:1.15;letter-spacing:-.01em;margin:0 0 10px;}
   .launch-sub{font-size:16px;color:var(--ink-soft);margin:0 0 22px;max-width:48ch;}
   .launch-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
@@ -182,18 +182,22 @@
   .diary-act.dl:hover{color:#fff;}
   .diary-act.clear:hover{color:#ff8a8a;}
   .diary-sum{font-size:13.5px;color:var(--diary-ink-soft);margin:0 0 12px;}
-  .gauge-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:18px;margin-bottom:16px;}
+  .diary-body{display:grid;grid-template-columns:260px 1fr;gap:22px;align-items:start;}
+  @media (max-width:720px){.diary-body{grid-template-columns:1fr;}}
+  .diary-left{display:flex;flex-direction:column;gap:14px;}
+  .diary-right{min-width:0;}
+  .gauge-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:22px 18px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;}
   .gauge-num{text-align:center;flex:none;}
+  .gauge-text{font-size:12.5px;color:var(--diary-ink-soft);line-height:1.5;margin-top:4px;}
+  .thermo{display:flex;height:12px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.12);margin-bottom:6px;}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--diary-ink-soft);}
+  .recent{display:flex;flex-direction:column;gap:2px;max-height:640px;overflow-y:auto;padding-right:4px;}
   .gauge-num .n{font-size:30px;font-weight:600;font-family:'Newsreader',serif;color:var(--diary-ink);}
   .gauge-num .s{font-size:10.5px;color:var(--diary-ink-soft);margin-top:2px;}
-  .gauge-text{font-size:12.5px;color:var(--diary-ink-soft);line-height:1.5;}
   .gauge-text b{color:var(--diary-ink);font-weight:600;}
-  .thermo{display:flex;height:12px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.12);margin-bottom:6px;}
   .thermo span{display:block;height:100%;}
-  .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--diary-ink-soft);margin-bottom:14px;}
   .legend span{display:inline-flex;align-items:center;gap:5px;}
   .legend i{width:8px;height:8px;border-radius:50%;display:inline-block;}
-  .recent{display:flex;flex-direction:column;gap:2px;max-height:640px;overflow-y:auto;padding-right:4px;}
   .recent::-webkit-scrollbar{width:6px;}
   .recent::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:999px;}
   .entry{display:flex;align-items:flex-start;gap:9px;font-size:13px;padding:9px 10px;margin:4px 0;border-radius:8px;cursor:pointer;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.14);text-align:left;width:100%;font-family:inherit;color:inherit;}
@@ -298,6 +302,38 @@
   </div>
 </section>
 
+<section class="fb launch-band" id="launch">
+  <div class="fb-inner launch">
+    <div class="section-eyebrow">Entry Points</div>
+    <h2>Other ways to use it</h2>
+    <p class="launch-sub">Same checker underneath, including a downloadable app. Pick whatever fits how you actually run into these messages.</p>
+    <div class="launch-grid">
+      <div class="launch-card">
+        <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 18v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></div>
+        <div class="lc-title">Download / install the app</div>
+        <div class="lc-body" id="lcInstallBody">Add it to your home screen or desktop so it opens on its own, no browser tab needed.</div>
+        <button class="lc-btn" id="installBtn" hidden>Install</button>
+      </div>
+      <div class="launch-card">
+        <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg></div>
+        <div class="lc-title">Scan the page you're on</div>
+        <div class="lc-body">Drag this to your bookmarks bar. Next time a site feels off, tap it to send that page straight here.</div>
+        <a class="lc-btn" id="bookmarkletLink" href="#">Scan this page</a>
+      </div>
+      <div class="launch-card">
+        <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-3.9M8.6 13.5l6.8 3.9"/></svg></div>
+        <div class="lc-title">Share it in</div>
+        <div class="lc-body">On your phone, hit Share on a message, screenshot, or link and pick Cyber Sidekick from the list.</div>
+      </div>
+      <div class="launch-card">
+        <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3"/><path d="M9 12h6M9 16h6"/></svg></div>
+        <div class="lc-title">Just paste it here</div>
+        <div class="lc-body">No setup at all. Paste text or a screenshot into the box above. Works everywhere, including iPhone.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <div class="page" id="checker">
   <div class="audience">
     <div class="label">Who is this for?</div>
@@ -331,36 +367,6 @@
       </div>
     </div>
   </div>
-
-  <section class="launch" id="launch">
-    <div class="section-eyebrow">Entry Points</div>
-    <h2>Other ways to use it</h2>
-    <p class="launch-sub">Same checker underneath, pick whatever fits how you actually run into these messages.</p>
-    <div class="launch-grid">
-      <div class="launch-card">
-        <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 18v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></div>
-        <div class="lc-title">Install the app</div>
-        <div class="lc-body" id="lcInstallBody">Add it to your home screen or desktop so it opens on its own, no browser tab needed.</div>
-        <button class="lc-btn" id="installBtn" hidden>Install</button>
-      </div>
-      <div class="launch-card">
-        <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg></div>
-        <div class="lc-title">Scan the page you're on</div>
-        <div class="lc-body">Drag this to your bookmarks bar. Next time a site feels off, tap it to send that page straight here.</div>
-        <a class="lc-btn" id="bookmarkletLink" href="#">Scan this page</a>
-      </div>
-      <div class="launch-card">
-        <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-3.9M8.6 13.5l6.8 3.9"/></svg></div>
-        <div class="lc-title">Share it in</div>
-        <div class="lc-body">On your phone, hit Share on a message, screenshot, or link and pick Cyber Sidekick from the list.</div>
-      </div>
-      <div class="launch-card">
-        <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3"/><path d="M9 12h6M9 16h6"/></svg></div>
-        <div class="lc-title">Just paste it here</div>
-        <div class="lc-body">No setup at all. Paste text or a screenshot into the box above. Works everywhere, including iPhone.</div>
-      </div>
-    </div>
-  </section>
 </div>
 
 <section class="fb diary" id="diary" hidden>
@@ -375,34 +381,39 @@
     </div>
     <p class="diary-sum" id="diarySum"></p>
 
-    <div class="gauge-card">
-      <svg width="110" height="66" viewBox="0 0 150 90" style="flex:none">
-        <path d="M15,80 A60,60 0 0,1 135,80" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="14" stroke-linecap="round"/>
-        <path id="gaugeArc" d="M15,80 A60,60 0 0,1 135,80" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round"/>
-        <defs>
-          <linearGradient id="gaugeGrad" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0%" stop-color="#FF6B6B"/>
-            <stop offset="50%" stop-color="#FFB74D"/>
-            <stop offset="100%" stop-color="#5CE0A0"/>
-          </linearGradient>
-        </defs>
-      </svg>
-      <div class="gauge-num">
-        <div class="n" id="gaugeScore">—</div>
-        <div class="s">safety score</div>
+    <div class="diary-body">
+      <div class="diary-left">
+        <div class="gauge-card">
+          <svg width="120" height="72" viewBox="0 0 150 90" style="flex:none">
+            <path d="M15,80 A60,60 0 0,1 135,80" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="14" stroke-linecap="round"/>
+            <path id="gaugeArc" d="M15,80 A60,60 0 0,1 135,80" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="gaugeGrad" x1="0" y1="1" x2="1" y2="0">
+                <stop offset="0%" stop-color="#FF6B6B"/>
+                <stop offset="50%" stop-color="#FFB74D"/>
+                <stop offset="100%" stop-color="#5CE0A0"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="gauge-num">
+            <div class="n" id="gaugeScore">—</div>
+            <div class="s">safety score</div>
+          </div>
+          <div class="gauge-text" id="gaugeText"></div>
+        </div>
+        <div class="thermo" id="thermo"></div>
+        <div class="legend">
+          <span><i style="background:#FF6B6B"></i>Scam</span>
+          <span><i style="background:#FFB74D"></i>Be careful</span>
+          <span><i style="background:#5CE0A0"></i>Looks safe</span>
+          <span><i style="background:#A9A5D9"></i>Unsure</span>
+        </div>
       </div>
-      <div class="gauge-text" id="gaugeText"></div>
+      <div class="diary-right">
+        <div class="recent" id="recent"></div>
+        <p class="diary-note">Saved only on this device. Tap an entry to see the full check. Nothing here is sent anywhere.</p>
+      </div>
     </div>
-
-    <div class="thermo" id="thermo"></div>
-    <div class="legend">
-      <span><i style="background:#FF6B6B"></i>Scam</span>
-      <span><i style="background:#FFB74D"></i>Be careful</span>
-      <span><i style="background:#5CE0A0"></i>Looks safe</span>
-      <span><i style="background:#A9A5D9"></i>Unsure</span>
-    </div>
-    <div class="recent" id="recent"></div>
-    <p class="diary-note">Saved only on this device. Tap an entry to see the full check. Nothing here is sent anywhere.</p>
   </div>
 </section>
 
