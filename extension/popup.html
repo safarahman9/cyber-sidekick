@@ -4,12 +4,23 @@
 <meta charset="UTF-8">
 <title>Cyber Sidekick</title>
 <style>
-  html, body { margin: 0; padding: 0; width: 400px; height: 616px; background: #FBFAF8; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; }
+  html, body { margin: 0; padding: 0; width: 400px; height: 660px; background: #FBFAF8; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; }
   .scanbar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #FBFAF8; border-bottom: 1px solid #ECEAE5; }
   .scanbtn { flex: 1; background: #3F3D9E; color: #fff; border: none; padding: 9px 12px; border-radius: 9px; font-weight: 600; font-size: 12.5px; cursor: pointer; font-family: inherit; }
   .scanbtn:hover { background: #332f8a; }
   .scanbtn:disabled { opacity: .55; cursor: default; }
   .scannote { font-size: 10.5px; color: #9A9AAB; padding: 0 12px 8px; line-height: 1.4; }
+
+  .autorow { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; background: #F3F1FB; border-bottom: 1px solid #ECEAE5; }
+  .autolabel { font-size: 12px; font-weight: 500; color: #1A1A2B; line-height: 1.35; }
+  .switch { position: relative; flex: none; width: 38px; height: 22px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: #D8D5EE; border-radius: 999px; cursor: pointer; transition: .15s; }
+  .slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .15s; }
+  input:checked + .slider { background: #3F3D9E; }
+  input:checked + .slider::before { transform: translateX(16px); }
+  .autonote { font-size: 10px; color: #9A9AAB; padding: 0 12px 8px; line-height: 1.4; }
+
   iframe { width: 100%; height: 542px; border: none; display: block; }
 </style>
 </head>
@@ -18,17 +29,28 @@
     The main body is a thin shell that loads the live Cyber Sidekick PWA in
     an iframe, keeping one source of truth for the chat logic and diary.
 
-    The "Scan this page" button is the one piece of real extension-only
-    functionality: it uses the activeTab permission, which Chrome only
-    grants for the current tab, only for the moment the person clicks it.
-    There is no background script and no host_permissions here, so this
-    extension has no standing access to browsing activity at all between
-    clicks. Nothing is read unless the person explicitly asks for it.
+    "Scan this page" uses activeTab: access to the current tab only, only
+    for the moment it's clicked, gone as soon as the popup closes.
+
+    "Automatically check sites I visit" is OFF by default (see the toggle
+    below). When on, background.js checks each new page's domain against
+    Google Safe Browsing only, it never reads page content for this path,
+    and nothing about your browsing is stored anywhere.
   -->
   <div class="scanbar">
     <button class="scanbtn" id="scanBtn">Scan this page</button>
   </div>
   <div class="scannote" id="scanNote">Reads the current tab's URL, title, and visible text only when you click, nothing is read automatically.</div>
+
+  <div class="autorow">
+    <span class="autolabel">Automatically check sites I visit</span>
+    <label class="switch">
+      <input type="checkbox" id="autoToggle">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="autonote">Off by default. When on, only checks each site's domain against Google's known-scam list, never reads page content, and nothing is stored.</div>
+
   <iframe id="app" src="https://unique-khapse-3e711e.netlify.app/" title="Cyber Sidekick"></iframe>
 
   <script src="popup.js"></script>
