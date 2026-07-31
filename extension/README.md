@@ -26,15 +26,34 @@ a live demo just re-load it right before presenting.
 ## What this version does and doesn't do
 
 - **Does:** gives one-click access to the full checker from the browser
-  toolbar, on any page.
-- **Doesn't:** read or scan the page you're currently on. There's no
-  `content_scripts` or `host_permissions` in the manifest, so this extension
-  has zero access to other tabs or browsing activity, on purpose. If the
-  team later wants a "scan the page I'm on" extension feature (similar to
-  Nishaanth's link scanner or Christina's page-flagging), that requires
-  adding real permissions and a background/content script, which is a
-  meaningfully bigger build and worth deciding on as a team first, since it
-  starts to overlap with what their tools already do.
+  toolbar, on any page. As of v1.1.0, it also has a **"Scan this page"**
+  button that reads the current tab's URL, title, and visible text on
+  demand and runs it through the same checker.
+- **How the scan is kept safe, on purpose:**
+  - Uses only the `activeTab` permission, Chrome grants this for the
+    current tab only, only for the moment you click, it expires the
+    instant the popup closes. There is no `content_scripts` and no
+    `host_permissions`, so nothing runs automatically in the background
+    and nothing persists between clicks.
+  - A hardcoded exclude list (`popup.js` → `EXCLUDE_HOSTS`) blocks
+    scanning on banking sites, government/tax sites, and major identity
+    providers (Google, Microsoft, Apple, PayPal accounts) even when the
+    button is clicked. This list is a starting point, not exhaustive,
+    extend it before relying on it beyond a demo.
+  - Only page URL, title, and up to ~2000 characters of visible text are
+    read, no form values, no cookies, no storage, no page HTML beyond
+    plain `innerText`.
+  - **Known limitation:** this reads the page as it exists in the DOM at
+    the moment you click, which covers JavaScript-rendered content (unlike
+    the server-side link inspection in `chat.js`, which only sees static
+    HTML). What it can't do is see content behind a login wall it doesn't
+    have your credentials for, or anything that loads after you click
+    away.
+  - If the team later wants this to run automatically as you browse
+    (rather than only on click), that requires `host_permissions` and a
+    background/content script, a meaningfully bigger and more sensitive
+    build, and worth deciding on as a team first since it starts to
+    overlap with what Christina's and Nishaanth's tools already do.
 
 ## If you want it in the actual Chrome Web Store or Firefox Add-ons later
 
