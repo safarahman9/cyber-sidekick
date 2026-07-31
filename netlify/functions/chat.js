@@ -49,6 +49,57 @@ CAFC CORE PROTECTION PRINCIPLES:
 - For more, the Government of Canada's "Little Black Book of Scams" lists these in detail.
 `;
 
+// Pull any URLs (with or without a scheme) out of the person's message so we
+// can cross-check them against Google Safe Browsing. This is a real,
+// independent data source, not the model guessing, the same spirit as an
+// extension that goes and checks a link before you do, just done server-side
+// since a PWA has no right-click access to the page itself.
+function extractUrls(text) {
+  if (!text) return [];
+  const found = new Set();
+  (text.match(/https?:\/\/[^\s"'<>]+/gi) || []).forEach((u) => found.add(u));
+  const bareDomains = text.match(/\b[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+\.(?:com|ca|net|org|info|xyz|io|co|app|link|shop|biz)\b/gi) || [];
+  bareDomains.forEach((d) => {
+    const already = [...found].some((u) => u.indexOf(d) !== -1);
+    if (!already) found.add("http://" + d);
+  });
+  return [...found].slice(0, 5);
+}
+
+function lastUserText(messages) {
+  const last = messages[messages.length - 1];
+  if (!last) return "";
+  if (typeof last.content === "string") return last.content;
+  if (Array.isArray(last.content)) {
+    return last.content.filter((b) => b.type === "text").map((b) => b.text || "").join(" ");
+  }
+  return "";
+}
+
+async function safeBrowsingCheck(urls) {
+  const key = process.env.GOOGLE_SAFE_BROWSING_API_KEY;
+  if (!key || !urls.length) return { checked: false, matches: [] };
+  try {
+    const res = await fetch(`https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${key}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        client: { clientId: "cyber-sidekick", clientVersion: "1.0.0" },
+        threatInfo: {
+          threatTypes: ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE", "POTENTIALLY_HARMFUL_APPLICATION"],
+          platformTypes: ["ANY_PLATFORM"],
+          threatEntryTypes: ["URL"],
+          threatEntries: urls.map((u) => ({ url: u }))
+        }
+      })
+    });
+    const data = await res.json();
+    return { checked: true, matches: Array.isArray(data.matches) ? data.matches : [] };
+  } catch (e) {
+    return { checked: false, matches: [] };
+  }
+}
+
 const AUDIENCE = {
   me: "an adult checking something for themselves",
   senior: "a senior. Slow down a little. Short, plain sentences and a calm, warm tone, like you are sitting right beside them. No jargon; if you have to use a word like phishing, explain it in a few plain words",
@@ -56,8 +107,19 @@ const AUDIENCE = {
   educator: "an educator. Give them the clear breakdown, then add one short line they could say to a class to explain the giveaway"
 };
 
-function buildSystem(mode) {
+function buildSystem(mode, safeBrowsing) {
   const audience = AUDIENCE[mode] || AUDIENCE.me;
+
+  let sbBlock = "";
+  if (safeBrowsing && safeBrowsing.checked) {
+    if (safeBrowsing.matches.length) {
+      const flaggedUrls = safeBrowsing.matches.map((m) => m.threat && m.threat.url).filter(Boolean).join(", ");
+      sbBlock = `\nDOMAIN REPUTATION CHECK (Google Safe Browsing, already run before you saw this, treat as ground truth): the following link(s) are on Google's known-dangerous list: ${flaggedUrls}. Say this plainly and early, and treat it as a strong scam or malware signal, do not hedge on this part.\n`;
+    } else {
+      sbBlock = `\nDOMAIN REPUTATION CHECK (Google Safe Browsing, already run before you saw this): none of the link(s) in this message are on Google's known-dangerous list. This does NOT mean the link is safe, a brand-new scam domain will not have hit that list yet, so keep weighing the other tells the normal way and do not present this as a clean bill of health on its own.\n`;
+    }
+  }
+
   return `You are Cyber Sidekick. Think of yourself as that one friend who happens to know a lot about scams, the person someone texts a screenshot to and asks "is this real?" You are calm, warm, and quick to reassure, because you have seen these a hundred times and they do not rattle you. You are never preachy, never robotic, never alarmist. Your knowledge follows the Canadian Anti-Fraud Centre (CAFC).
 
 You are an AI, not a human, and you never pretend otherwise. If someone asks, just say so plainly. You are genuinely warm and helpful without faking emotions or claiming to remember someone you have not met.
@@ -65,7 +127,7 @@ You are an AI, not a human, and you never pretend otherwise. If someone asks, ju
 You remember this conversation. Earlier messages are included, so refer back to them naturally and do not ask for something the person already told you.
 
 Right now you are helping ${audience}.
-
+${sbBlock}
 ${CAFC_REFERENCE}
 
 WHEN A SCREENSHOT OR FILE IS SHARED:
@@ -148,6 +210,9 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: "No message provided" }) };
     }
 
+    const candidateUrls = extractUrls(lastUserText(messages));
+    const safeBrowsing = await safeBrowsingCheck(candidateUrls);
+
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -158,7 +223,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
         max_tokens: 1024, // raise if you want longer answers (web search results count as input, not output)
-        system: buildSystem(mode),
+        system: buildSystem(mode, safeBrowsing),
         messages,
         tools: [{
           type: "web_search_20250305",
@@ -195,6 +260,12 @@ exports.handler = async (event) => {
       }
     }
     const searchUsed = searchCount > 0;
+
+    // Surface the independent domain check too, so "Sources checked" reflects
+    // real verification, not just the model's own reasoning.
+    if (safeBrowsing.checked) {
+      sources.unshift(safeBrowsing.matches.length ? "Google Safe Browsing (flagged)" : "Google Safe Browsing");
+    }
 
     // With web search the reply may contain tool-use blocks; keep only the text blocks.
     let reply = blocks
