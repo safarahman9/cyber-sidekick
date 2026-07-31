@@ -2,8 +2,9 @@
   "manifest_version": 3,
   "name": "Cyber Sidekick",
   "short_name": "Cyber Sidekick",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Check if a text, email, call, or link is a scam, right from your toolbar.",
+  "permissions": ["activeTab", "scripting"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Cyber Sidekick",
