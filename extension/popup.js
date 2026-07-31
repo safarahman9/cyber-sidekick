@@ -101,3 +101,31 @@ chrome.storage.local.get(STORAGE_KEY).then((stored) => {
 autoToggle.addEventListener('change', () => {
   chrome.storage.local.set({ [STORAGE_KEY]: autoToggle.checked });
 });
+
+/* ---------- flagged-result banner ---------- */
+// On open, check whether background.js already flagged the current tab
+// (stored only in chrome.storage.session, memory-only, cleared when the
+// browser closes or the tab closes) and show why, if so.
+const RESULT_PREFIX = 'tabResult_';
+const THREAT_LABELS = {
+  MALWARE: 'known malware',
+  SOCIAL_ENGINEERING: 'phishing / social engineering',
+  UNWANTED_SOFTWARE: 'unwanted software',
+  POTENTIALLY_HARMFUL_APPLICATION: 'potentially harmful app'
+};
+
+(async function checkFlaggedBanner(){
+  const flagBanner = document.getElementById('flagBanner');
+  const flagBody = document.getElementById('flagBody');
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.id) return;
+    const key = RESULT_PREFIX + tab.id;
+    const stored = await chrome.storage.session.get(key);
+    const result = stored[key];
+    if (!result) return;
+    const labels = (result.threats || []).map((t) => THREAT_LABELS[t] || t.toLowerCase()).join(', ') || 'a known-scam list';
+    flagBody.textContent = 'Google Safe Browsing flagged this domain for: ' + labels + '. Consider leaving this site.';
+    flagBanner.classList.add('show');
+  } catch (e) { /* no active tab or storage unavailable, just skip the banner */ }
+})();
