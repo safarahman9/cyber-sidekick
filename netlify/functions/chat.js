@@ -264,6 +264,16 @@ Immediately after the RISK line, on one more new final line, output a JSON array
 Only include factors that genuinely apply to this specific message, never pad the list to hit 5. A clearly safe message can have mostly "low" severity factors explaining why it looks fine.
 Format exactly like this, one line, valid JSON, nothing else on the line:
 FACTORS: [{"name":"Urgency pressure","severity":"high","note":"demands action before a countdown expires"},{"name":"Gift card payment","severity":"high","note":"asks for payment in gift cards"}]
+This line is removed before the person sees it, so never mention it or refer to it in your reply.
+
+INTERNAL ACTIONS TAG (for the clickable next-steps panel, not shown to the person as raw text):
+Immediately after the FACTORS line, on one more new final line, output a JSON array of 2 to 4 concrete next actions for THIS situation, most important first. Each action is an object with:
+- "label": short, imperative, under 10 words (examples: "Report to the Canadian Anti-Fraud Centre", "Call your bank directly", "Forward this text to 7726", "Open your bank's app to check your balance")
+- "type": one of "link" (opens a URL), "tel" (dials a phone number), "check" (a physical step with no link, like "delete the email")
+- "href": required for "link" and "tel", omit for "check". A real URL like https://reportcyberandfraud.canada.ca, or a tel: link like tel:18884958501
+Only include actions that genuinely fit this message. Default useful ones when relevant: reporting to CAFC (link: https://reportcyberandfraud.canada.ca), calling CAFC (tel:18884958501), forwarding a scam text to 7726 (type "check"), and anything specific to the situation (like checking a bank app directly, type "check"). A clearly safe message may need only 1-2 low-key actions, do not pad the list.
+Format exactly like this, one line, valid JSON, nothing else on the line:
+ACTIONS: [{"label":"Report to the Canadian Anti-Fraud Centre","type":"link","href":"https://reportcyberandfraud.canada.ca"},{"label":"Call CAFC","type":"tel","href":"tel:18884958501"},{"label":"Open your bank's app directly to check your balance","type":"check"}]
 This line is removed before the person sees it, so never mention it or refer to it in your reply.`;
 }
 
@@ -357,6 +367,26 @@ exports.handler = async (event) => {
       .join("\n")
       .trim() || "Sorry, I could not get an answer just now. Please try again.";
 
+    // Pull the hidden actions tag off the very end (it comes after FACTORS) and strip it first.
+    let actions = [];
+    const actionsTag = reply.match(/\n?ACTIONS:\s*(\[[\s\S]*\])\s*$/i);
+    if (actionsTag) {
+      try {
+        const parsed = JSON.parse(actionsTag[1]);
+        if (Array.isArray(parsed)) {
+          actions = parsed
+            .filter((a) => a && typeof a.label === "string" && typeof a.type === "string")
+            .map((a) => ({
+              label: a.label.slice(0, 80),
+              type: /^(link|tel|check)$/i.test(a.type) ? a.type.toLowerCase() : "check",
+              href: typeof a.href === "string" ? a.href.slice(0, 300) : undefined
+            }))
+            .slice(0, 4);
+        }
+      } catch (e) { /* malformed JSON from the model, just drop the actions list */ }
+      reply = reply.slice(0, actionsTag.index).trim();
+    }
+
     // Pull the hidden factors tag off the end (it comes after RISK) and strip it too.
     let factors = [];
     const factorsTag = reply.match(/\n?FACTORS:\s*(\[[\s\S]*\])\s*$/i);
@@ -390,7 +420,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ reply, risk, factors, searchUsed, searchCount, sources: sources.slice(0, 8) })
+      body: JSON.stringify({ reply, risk, factors, actions, searchUsed, searchCount, sources: sources.slice(0, 8) })
     };
   } catch (e) {
     return { statusCode: 500, body: JSON.stringify({ error: "Server error" }) };
