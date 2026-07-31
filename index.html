@@ -22,6 +22,21 @@
   body.large{--msg:18px;font-size:19px;}
   .page{max-width:600px;margin:0 auto;padding:0 24px;}
 
+  /* Sticky site nav: logo, section links, CTA */
+  .tabnav{position:sticky;top:0;z-index:50;background:rgba(251,250,248,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);}
+  .tabnav .page{padding:13px 24px;}
+  .navrow{display:flex;align-items:center;justify-content:space-between;gap:16px;}
+  .navbrand{display:flex;align-items:center;gap:9px;flex:none;}
+  .navbrand .shield{width:22px;height:25px;flex:none;}
+  .navbrand .mark{font-family:'Newsreader',serif;font-weight:500;font-size:17px;letter-spacing:-.01em;color:var(--ink);white-space:nowrap;}
+  .navlinks{display:flex;gap:4px;overflow-x:auto;flex:1;min-width:0;}
+  .tab-btn{font-size:13px;font-weight:500;color:var(--ink-soft);background:transparent;border:1px solid transparent;padding:8px 13px;border-radius:999px;cursor:pointer;font-family:inherit;white-space:nowrap;flex:none;transition:.15s;}
+  .tab-btn:hover:not(:disabled){background:var(--bg);color:var(--ink);}
+  .tab-btn:disabled{opacity:.4;cursor:default;}
+  .nav-cta{flex:none;background:var(--accent);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-weight:600;font-size:13.5px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+  .nav-cta:hover{background:#332f8a;}
+  @media (max-width:560px){.navlinks{display:none;}}
+
   header{display:flex;align-items:center;gap:10px;padding:40px 0 0;}
   header .shield{width:24px;height:27px;}
   header .mark{font-family:'Newsreader',serif;font-weight:500;font-size:19px;letter-spacing:-.01em;}
@@ -90,6 +105,20 @@
   .fb-inner{max-width:600px;margin:0 auto;padding:28px 24px;}
   .fb[hidden]{display:none;}
 
+  /* Ways to launch: entry-point cards, sits in the narrow column under the chat card */
+  .launch{padding:44px 0 8px;border-top:1px solid var(--line);margin-top:12px;}
+  .launch h2{font-family:'Newsreader',serif;font-weight:500;font-size:30px;line-height:1.15;letter-spacing:-.01em;margin:0 0 10px;}
+  .launch-sub{font-size:16px;color:var(--ink-soft);margin:0 0 22px;max-width:48ch;}
+  .launch-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width:560px){.launch-grid{grid-template-columns:1fr;}}
+  .launch-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 20px 22px;display:flex;flex-direction:column;gap:8px;transition:.15s;}
+  .launch-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 10px 24px rgba(63,61,158,.09);}
+  .lc-icon{width:42px;height:42px;border-radius:11px;background:#ECEBF6;color:var(--accent);display:flex;align-items:center;justify-content:center;margin-bottom:2px;}
+  .lc-title{font-weight:600;font-size:17px;color:var(--ink);letter-spacing:-.005em;}
+  .lc-body{font-size:14.5px;color:var(--ink-soft);line-height:1.55;}
+  .lc-btn{align-self:flex-start;margin-top:8px;font-size:13.5px;font-weight:500;color:#fff;background:var(--accent);border:none;padding:9px 16px;border-radius:9px;cursor:grab;text-decoration:none;font-family:inherit;}
+  .lc-btn:hover{background:#332f8a;}
+
   /* Risk diary: full-width dark-purple block, distinct zone from the rest of the page */
   .diary{
     --diary-bg:#231F5C; --diary-bg2:#2E2878; --diary-ink:#F2F1FB; --diary-ink-soft:#C6C3E8;
@@ -103,13 +132,6 @@
   .diary-act.dl:hover{color:#fff;}
   .diary-act.clear:hover{color:#ff8a8a;}
   .diary-sum{font-size:13.5px;color:var(--diary-ink-soft);margin:0 0 12px;}
-  /* Dashboard summary: stat cards + safety gauge, sits above the thermometer/list */
-  .dash-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 18px;}
-  .dash-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 14px;}
-  .dash-label{font-size:11px;color:var(--diary-ink-soft);margin-bottom:5px;}
-  .dash-value{font-size:20px;font-weight:600;color:var(--diary-ink);font-family:'Newsreader',serif;}
-  .dash-value.ok{color:#7BE0AA;}
-  .dash-value.warn{color:#FFC98A;}
   .gauge-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:18px;margin-bottom:16px;}
   .gauge-num{text-align:center;flex:none;}
   .gauge-num .n{font-size:30px;font-weight:600;font-family:'Newsreader',serif;color:var(--diary-ink);}
@@ -179,6 +201,21 @@
 </head>
 <body>
 
+<nav class="tabnav" id="tabnav">
+  <div class="page navrow">
+    <div class="navbrand">
+      <svg class="shield"><use href="#shield"/></svg>
+      <span class="mark">Cyber Sidekick</span>
+    </div>
+    <div class="navlinks">
+      <button class="tab-btn" data-target="launch">Ways to use it</button>
+      <button class="tab-btn" id="tabDiary" data-target="diary" disabled>Diary</button>
+      <button class="tab-btn" id="tabSites" data-target="sitesBlock" disabled>Sites</button>
+    </div>
+    <button class="nav-cta" data-target="top">Check a message</button>
+  </div>
+</nav>
+
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="shield" viewBox="0 0 24 27">
     <path d="M12 1 L22 4.4 V13 C22 20 17.5 24 12 26 C6.5 24 2 20 2 13 V4.4 Z" fill="none" stroke="#3F3D9E" stroke-width="1.8" stroke-linejoin="round"/>
@@ -187,11 +224,6 @@
 </svg>
 
 <div class="page">
-  <header>
-    <svg class="shield"><use href="#shield"/></svg>
-    <span class="mark">Cyber Sidekick</span>
-  </header>
-
   <section class="intro">
     <h1>Got a text, email, or call that feels off?</h1>
     <p>Paste it below, or add a screenshot. I'll tell you straight if it's a scam, and exactly what to do next.</p>
@@ -229,6 +261,35 @@
       </div>
     </div>
   </div>
+
+  <section class="launch" id="launch">
+    <h2>Other ways to use it</h2>
+    <p class="launch-sub">Same checker underneath, pick whatever fits how you actually run into these messages.</p>
+    <div class="launch-grid">
+      <div class="launch-card">
+        <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 18v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></div>
+        <div class="lc-title">Install the app</div>
+        <div class="lc-body" id="lcInstallBody">Add it to your home screen or desktop so it opens on its own, no browser tab needed.</div>
+        <button class="lc-btn" id="installBtn" hidden>Install</button>
+      </div>
+      <div class="launch-card">
+        <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg></div>
+        <div class="lc-title">Scan the page you're on</div>
+        <div class="lc-body">Drag this to your bookmarks bar. Next time a site feels off, tap it to send that page straight here.</div>
+        <a class="lc-btn" id="bookmarkletLink" href="#">Scan this page</a>
+      </div>
+      <div class="launch-card">
+        <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-3.9M8.6 13.5l6.8 3.9"/></svg></div>
+        <div class="lc-title">Share it in</div>
+        <div class="lc-body">On your phone, hit Share on a message, screenshot, or link and pick Cyber Sidekick from the list.</div>
+      </div>
+      <div class="launch-card">
+        <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3"/><path d="M9 12h6M9 16h6"/></svg></div>
+        <div class="lc-title">Just paste it here</div>
+        <div class="lc-body">No setup at all. Paste text or a screenshot into the box above. Works everywhere, including iPhone.</div>
+      </div>
+    </div>
+  </section>
 </div>
 
 <section class="fb diary" id="diary" hidden>
@@ -241,21 +302,6 @@
       </div>
     </div>
     <p class="diary-sum" id="diarySum"></p>
-
-    <div class="dash-row">
-      <div class="dash-card">
-        <div class="dash-label">Checked</div>
-        <div class="dash-value" id="dashChecked">0</div>
-      </div>
-      <div class="dash-card">
-        <div class="dash-label">Flagged</div>
-        <div class="dash-value" id="dashFlagged">0</div>
-      </div>
-      <div class="dash-card">
-        <div class="dash-label">Status</div>
-        <div class="dash-value" id="dashStatus">—</div>
-      </div>
-    </div>
 
     <div class="gauge-card">
       <svg width="110" height="66" viewBox="0 0 150 90" style="flex:none">
@@ -321,9 +367,9 @@ const GREET = {
 };
 
 const CHIP_TEXT = {
-  cra:"I got a text saying: \"CRA: You have an unclaimed refund of $402.50. Confirm your details: cra-refund-secure.ca\". Is this real?",
-  grandparent:"Someone called saying my grandson is in jail and needs $2,000 in gift cards for bail today. What should I do?",
-  etransfer:"I got an email: \"Your Interac e-Transfer of $750 is pending. Click to deposit before it expires.\" I wasn't expecting any money."
+  cra:"I got a text from \"CRA-Alerts\" saying: \"CRA: You have an unclaimed refund of $402.50. Confirm your banking details within 24 hours: cra-refund-secure.ca/claim\". Is this really from the CRA? Point out exactly what gives it away and tell me what to do right now.",
+  grandparent:"Someone called saying they're a bail bondsman, my grandson was in a car accident and is in jail, and I need to send $2,000 in Google Play gift cards within the hour or he doesn't get released, and not to tell the rest of the family. Is this actually happening or is it a scam? Walk me through exactly how to check.",
+  etransfer:"I got an email from \"Interac e-Transfer\" saying: \"You have received $750.00. Click here within 30 minutes to deposit: interac-etransfer-deposit.com\". I wasn't expecting money from anyone. Is this legit, and what's the safest way to check without clicking the link?"
 };
 
 // Endpoint toggle for the A/B demo.
@@ -351,9 +397,6 @@ const fileInput=document.getElementById('file');
 const attachWrap=document.getElementById('attachments');
 const diary=document.getElementById('diary');
 const diarySum=document.getElementById('diarySum');
-const dashChecked=document.getElementById('dashChecked');
-const dashFlagged=document.getElementById('dashFlagged');
-const dashStatus=document.getElementById('dashStatus');
 const gaugeScore=document.getElementById('gaugeScore');
 const gaugeArc=document.getElementById('gaugeArc');
 const gaugeText=document.getElementById('gaugeText');
@@ -361,6 +404,8 @@ const thermo=document.getElementById('thermo');
 const recent=document.getElementById('recent');
 const diaryClear=document.getElementById('diaryClear');
 const diaryDownload=document.getElementById('diaryDownload');
+const tabDiary=document.getElementById('tabDiary');
+const tabSites=document.getElementById('tabSites');
 
 function el(cls,html){const d=document.createElement('div');d.className=cls;d.innerHTML=html;return d;}
 function scroll(){chat.scrollTop=chat.scrollHeight;}
@@ -675,8 +720,9 @@ function whenLabel(ts){
 }
 function renderDiary(){
   const log=loadLog();
-  if(log.length===0){ diary.hidden=true; return; }
+  if(log.length===0){ diary.hidden=true; tabDiary.disabled=true; return; }
   diary.hidden=false;
+  tabDiary.disabled=false;
 
   const counts={scam:0, likely:0, safe:0, unsure:0};
   log.forEach(e=>{ counts[e.risk]=(counts[e.risk]||0)+1; });
@@ -701,10 +747,6 @@ function renderDiary(){
     ? Math.round(log.reduce((sum,e)=>sum+(scorePoints[e.risk]??75),0)/total)
     : 100;
   const healthy = weekFlagged < 2;
-  dashChecked.textContent = total;
-  dashFlagged.textContent = flagged;
-  dashStatus.textContent = healthy ? 'Healthy' : 'Needs attention';
-  dashStatus.className = 'dash-value ' + (healthy ? 'ok' : 'warn');
 
   gaugeScore.textContent = score;
   const R = 60, arcLen = Math.PI*R;
@@ -791,8 +833,9 @@ const sitesClear=document.getElementById('sitesClear');
 
 function renderSites(){
   const list=loadSites();
-  if(list.length===0){ sitesBlock.hidden=true; return; }
+  if(list.length===0){ sitesBlock.hidden=true; tabSites.disabled=true; return; }
   sitesBlock.hidden=false;
+  tabSites.disabled=false;
   siteList.innerHTML='';
   const colors={scam:'#C5221F',likely:'#B26A00',safe:'#1E7A3D',unsure:'#6B6B7B'};
   list.slice().reverse().forEach(s=>{
@@ -940,6 +983,59 @@ field.addEventListener('paste', async (e)=>{
     }
   }
 });
+
+/* ---------- sticky section nav ---------- */
+document.getElementById('tabnav').addEventListener('click', e=>{
+  const b=e.target.closest('.tab-btn, .nav-cta'); if(!b || b.disabled) return;
+  const target=b.dataset.target;
+  if(target==='top'){ window.scrollTo({top:0, behavior:'smooth'}); return; }
+  const section=document.getElementById(target);
+  if(section) section.scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+/* ---------- ways to launch: install prompt + bookmarklet ---------- */
+const installBtn=document.getElementById('installBtn');
+const lcInstallBody=document.getElementById('lcInstallBody');
+let deferredInstall=null;
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone===true;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+if(isStandalone){
+  lcInstallBody.textContent = "You're already using the installed app. Nothing more to do here.";
+}else if(isIOS){
+  lcInstallBody.textContent = 'On iPhone or iPad: tap the Share button in Safari, then "Add to Home Screen."';
+}else{
+  window.addEventListener('beforeinstallprompt', e=>{
+    e.preventDefault();
+    deferredInstall=e;
+    installBtn.hidden=false;
+  });
+  installBtn.addEventListener('click', async ()=>{
+    if(!deferredInstall) return;
+    deferredInstall.prompt();
+    await deferredInstall.userChoice;
+    deferredInstall=null;
+    installBtn.hidden=true;
+  });
+}
+
+// Bookmarklet: a javascript: link the person drags to their bookmarks bar.
+// Tapping it on any site grabs that page's URL, title, and either the
+// person's text selection or a slice of visible page text, then opens this
+// app with those as query params, which handleBookmarkletScan() below reads.
+(function setupBookmarklet(){
+  const link=document.getElementById('bookmarkletLink');
+  if(!link) return;
+  const origin = location.origin + '/';
+  const code = "(function(){var s=window.getSelection().toString();var t=s||document.body.innerText.slice(0,2000);var m=s?'selection':'page';window.open('"+origin+"?scanurl='+encodeURIComponent(location.href)+'&scantitle='+encodeURIComponent(document.title)+'&scantext='+encodeURIComponent(t)+'&scanmode='+m,'_blank');})();";
+  link.setAttribute('href', 'javascript:' + encodeURIComponent(code));
+  link.addEventListener('click', e=>{
+    // A click can't usefully run this on the current page anyway, since the
+    // whole point is running it on whatever OTHER site the person is on.
+    e.preventDefault();
+    alert('Drag this button up to your bookmarks bar instead of clicking it. Then tap it any time you\u2019re on a page that feels off.');
+  });
+})();
 
 greet();
 renderDiary();
