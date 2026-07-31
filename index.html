@@ -119,6 +119,16 @@
   .ftext{color:var(--ink-soft);}
   .ftext b{color:var(--ink);font-weight:600;}
 
+  /* Next-steps action panel: concrete, clickable/checkable things to do right now */
+  .actions{margin-top:11px;display:flex;flex-direction:column;gap:2px;padding:12px 13px;background:#F3F1FB;border:1px solid #E1DCF5;border-radius:10px;}
+  .actions-h{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:5px;}
+  .action-row{display:flex;align-items:center;gap:9px;font-size:13px;padding:6px 2px;cursor:pointer;}
+  .action-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);flex:none;cursor:pointer;}
+  .action-row .lbl{color:var(--ink);line-height:1.4;}
+  .action-row a.lbl{color:var(--accent);text-decoration:none;font-weight:500;}
+  .action-row a.lbl:hover{text-decoration:underline;}
+  .action-row input:checked ~ .lbl{color:var(--ink-soft);text-decoration:line-through;text-decoration-color:var(--muted);}
+
   .listen{margin-top:10px;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);background:transparent;border:1px solid var(--line);padding:5px 11px;border-radius:999px;cursor:pointer;font-family:inherit;}
   .listen:hover{border-color:var(--accent);color:var(--accent);}
   .listen.playing{background:var(--accent);border-color:var(--accent);color:#fff;}
@@ -517,7 +527,7 @@ function addListen(bubble, plainText){
   bubble.appendChild(btn);
 }
 
-function botBubble(text, sources, factors){
+function botBubble(text, sources, factors, actions){
   const b=document.createElement('div');
   b.className='msg bot';
   const body=document.createElement('div');
@@ -548,6 +558,9 @@ function botBubble(text, sources, factors){
     });
     b.appendChild(panel);
   }
+  if(actions && actions.length){
+    b.appendChild(buildActionsPanel(actions));
+  }
   if(sources && sources.length){
     const c=document.createElement('div');
     c.className='checked';
@@ -557,6 +570,43 @@ function botBubble(text, sources, factors){
   }
   addListen(b, text);
   chat.appendChild(b);scroll();
+}
+
+// Renders the "Next steps" panel: each action is a real checkbox the person
+// can tick off, and link/tel actions are also clickable (opens the CAFC
+// report page, dials the number, etc). Checked state is visual only, just
+// helps someone track what they've done, it isn't saved anywhere.
+function buildActionsPanel(actions){
+  const panel=document.createElement('div');
+  panel.className='actions';
+  const heading=document.createElement('div');
+  heading.className='actions-h';
+  heading.textContent='Next steps';
+  panel.appendChild(heading);
+  actions.forEach(a=>{
+    const row=document.createElement('label');
+    row.className='action-row';
+    const cb=document.createElement('input');
+    cb.type='checkbox';
+    row.appendChild(cb);
+    if((a.type==='link' || a.type==='tel') && a.href){
+      const link=document.createElement('a');
+      link.className='lbl';
+      link.href=a.href;
+      if(a.type==='link'){ link.target='_blank'; link.rel='noopener noreferrer'; }
+      link.textContent=a.label||'';
+      // Clicking the link shouldn't also toggle the checkbox underneath it
+      link.addEventListener('click', e=>e.stopPropagation());
+      row.appendChild(link);
+    }else{
+      const span=document.createElement('span');
+      span.className='lbl';
+      span.textContent=a.label||'';
+      row.appendChild(span);
+    }
+    panel.appendChild(row);
+  });
+  return panel;
 }
 
 function userMsg(text, atts){
@@ -720,8 +770,9 @@ async function ask(text, atts, meta){
     const risk = data.risk || 'unsure';
     const sources = Array.isArray(data.sources) ? data.sources : [];
     const factors = Array.isArray(data.factors) ? data.factors : [];
+    const actions = Array.isArray(data.actions) ? data.actions : [];
     messages.push({role:'assistant', content: reply});
-    botBubble(reply, sources, factors);
+    botBubble(reply, sources, factors, actions);
 
     let thumb = null;
     const imgAtt = (atts||[]).find(a=>a.kind==='image');
@@ -729,7 +780,7 @@ async function ask(text, atts, meta){
 
     logCheck(risk, factors, {
       q: typed || (atts&&atts.length ? '(shared a screenshot)' : ''),
-      a: reply, thumb, sources,
+      a: reply, thumb, sources, actions,
       searchUsed: !!data.searchUsed,
       siteUrl: meta && meta.siteUrl, siteTitle: meta && meta.siteTitle
     });
@@ -775,6 +826,7 @@ function logSite(url, title, risk, detail){
     t:Date.now(), url, hostname, title: title || '', risk: risk || 'unsure',
     reply: (detail && detail.reply) || '',
     factors: (detail && detail.factors) || [],
+    actions: (detail && detail.actions) || [],
     thumb: (detail && detail.thumb) || null
   });
   saveSites(list);
@@ -787,6 +839,7 @@ function logCheck(risk, factors, turn){
   log.push({
     id: Date.now()+'-'+Math.random().toString(36).slice(2,7),
     t: Date.now(), mode, risk, factors: factors || [],
+    actions: turn.actions || [],
     q: (turn.q || '').slice(0, 4000),
     a: (turn.a || '').slice(0, 4000),
     thumb: turn.thumb || null,
@@ -796,7 +849,7 @@ function logCheck(risk, factors, turn){
     siteTitle: turn.siteTitle || null
   });
   saveLog(log);
-  if(turn.siteUrl) logSite(turn.siteUrl, turn.siteTitle, risk, { reply: turn.a, factors, thumb: turn.thumb });
+  if(turn.siteUrl) logSite(turn.siteUrl, turn.siteTitle, risk, { reply: turn.a, factors, actions: turn.actions, thumb: turn.thumb });
   renderDiary();
   renderSites();
 }
@@ -991,6 +1044,18 @@ function factorsHtml(factors){
   return '<div class="modal-h">What stood out</div><div class="modal-factors">'+rows+'</div>';
 }
 
+function actionsHtml(actions){
+  if(!actions || !actions.length) return '';
+  const rows=actions.map(a=>{
+    const label=esc(a.label||'');
+    const inner = (a.type==='link' || a.type==='tel') && a.href
+      ? '<a class="lbl" href="'+esc(a.href)+'"'+(a.type==='link'?' target="_blank" rel="noopener noreferrer"':'')+'>'+label+'</a>'
+      : '<span class="lbl">'+label+'</span>';
+    return '<label class="action-row"><input type="checkbox">'+inner+'</label>';
+  }).join('');
+  return '<div class="modal-h">Next steps</div><div class="actions" style="background:transparent;border:none;padding:0;">'+rows+'</div>';
+}
+
 function openDiaryModal(entry){
   const risk=entry.risk||'unsure';
   let html = '<div class="modal-report-head" style="background:'+RISK_BG[risk]+';color:'+RISK_COLOR[risk]+'">'+
@@ -1014,6 +1079,7 @@ function openDiaryModal(entry){
   html += '</div></div>';
 
   html += factorsHtml(entry.factors);
+  html += actionsHtml(entry.actions);
 
   if(entry.sources && entry.sources.length){
     html += '<div class="modal-h">Sources checked</div><div class="modal-text">'+esc(entry.sources.join(', '))+'</div>';
@@ -1038,6 +1104,7 @@ function openSiteModal(entry){
     html += '<div class="modal-h">What Cyber Sidekick said</div><div class="modal-text">'+esc(entry.reply)+'</div>';
   }
   html += factorsHtml(entry.factors);
+  html += actionsHtml(entry.actions);
   html += '</div>';
   modalBody.innerHTML = html;
   modalOverlay.hidden=false;
