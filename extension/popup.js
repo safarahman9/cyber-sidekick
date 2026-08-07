@@ -197,7 +197,10 @@ function renderPrivacyResult(data, policyUrl) {
   const risk = (data.risk_level || 'Medium').toLowerCase();
   const flags = Array.isArray(data.red_flags) ? data.red_flags : [];
   const flagList = flags.length
-    ? `<ul>${flags.map((f) => `<li>${escapeHTML(f.flag || f)}</li>`).join('')}</ul>`
+    ? `<ul>${flags.map((f) => {
+        const sev = (f.severity || 'Medium').toLowerCase() === 'high' ? 'high' : 'medium';
+        return `<li class="flag-${sev}">${escapeHTML(f.flag || f)}</li>`;
+      }).join('')}</ul>`
     : '';
 
   privResult.innerHTML = `
@@ -215,13 +218,47 @@ function renderPrivacyResult(data, policyUrl) {
   const highlightBtn = document.getElementById('privHighlightBtn');
   if (highlightBtn) {
     highlightBtn.addEventListener('click', () => {
-      const quotes = flags.map((f) => f.quote).filter(Boolean);
+      const quotes = flags
+        .filter((f) => f.quote)
+        .map((f) => ({ quote: f.quote, severity: (f.severity || 'Medium').toLowerCase() === 'high' ? 'high' : 'medium' }));
       // Sent to the background service worker, not handled here, so the
       // highlight still runs even if opening the new tab closes this popup.
       chrome.runtime.sendMessage({ type: 'HIGHLIGHT_POLICY', url: policyUrl, quotes });
     });
   }
+
+  // Remember this scan so reopening the popup shows it again instead of a
+  // blank state, even after "View the full policy" navigates away.
+  chrome.storage.local.set({ lastPrivacyScan: { data, policyUrl, t: Date.now() } }).catch(() => {});
 }
+
+// Chrome throws away the popup's DOM every time it closes - clicking "View
+// the full policy" or "Open policy & highlight flags" opens a new tab,
+// which closes this popup, so without this the scan would be gone the next
+// time it's opened. Restores the last result on load and shows when it was
+// from, until the person runs a new scan (which overwrites it above).
+async function restoreLastPrivacyScan() {
+  try {
+    const stored = await chrome.storage.local.get('lastPrivacyScan');
+    const entry = stored.lastPrivacyScan;
+    if (!entry || !entry.data) return;
+
+    renderPrivacyResult(entry.data, entry.policyUrl);
+
+    const when = entry.t ? new Date(entry.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const note = document.createElement('div');
+    note.className = 'priv-restored-note';
+    note.innerHTML = `<span>Showing your last scan${when ? ' from ' + escapeHTML(when) : ''}.</span><button id="privDismissRestored">Clear</button>`;
+    privResult.prepend(note);
+
+    document.getElementById('privDismissRestored').addEventListener('click', () => {
+      privResult.classList.remove('show');
+      privResult.innerHTML = '';
+      chrome.storage.local.remove('lastPrivacyScan').catch(() => {});
+    });
+  } catch (e) { /* no stored scan, or storage unavailable - just show the empty state */ }
+}
+restoreLastPrivacyScan();
 
 // Shared by both the auto-detect button and the manual-paste fallback.
 async function scanPolicy({ url, company, text }) {
