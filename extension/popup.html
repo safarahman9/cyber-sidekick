@@ -34,6 +34,11 @@
   .priv-section.flags ul { color: #C5221F; }
   .priv-link { display: inline-block; margin-top: 4px; font-size: 11.5px; color: #3F3D9E; text-decoration: none; font-weight: 600; }
   .priv-link:hover { text-decoration: underline; }
+
+  .priv-manual { display: flex; gap: 6px; margin-top: 8px; }
+  .priv-manual input { flex: 1; border: 1px solid #ECEAE5; border-radius: 8px; padding: 7px 9px; font-size: 11.5px; font-family: inherit; }
+  .priv-manual button { background: #F3F1FB; color: #3F3D9E; border: none; border-radius: 8px; padding: 0 12px; font-size: 11.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .priv-manual button:hover { background: #E4E0F7; }
   .scanbar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #FBFAF8; border-bottom: 1px solid #ECEAE5; }
   .scanbtn { flex: 1; background: #3F3D9E; color: #fff; border: none; padding: 9px 12px; border-radius: 9px; font-weight: 600; font-size: 12.5px; cursor: pointer; font-family: inherit; }
   .scanbtn:hover { background: #332f8a; }
@@ -94,10 +99,14 @@
   </div>
 
   <div class="card">
-    <h2>📄 Privacy Policy Scanner</h2>
-    <p style="font-size:11.5px;color:#55556A;margin:0 0 8px;line-height:1.5;">Open a company's privacy policy or terms page, then scan it for a plain-language summary of what data they collect, who they share it with, and your rights.</p>
+    <h2> Privacy Policy Scanner</h2>
+    <p style="font-size:11.5px;color:#55556A;margin:0 0 8px;line-height:1.5;">Scans the site you're currently on, or type any company name or domain below to look up and scan their policy directly, no need to visit their site first.</p>
     <button class="privbtn" id="privBtn">📄 Scan this policy</button>
     <div class="privnote" id="privNote">Reads the current tab's visible text only when you click.</div>
+    <div class="priv-manual">
+      <input type="text" id="privManualUrl" placeholder="Company name, domain, or policy URL">
+      <button id="privManualBtn">Find & Scan</button>
+    </div>
     <div class="privresult" id="privResult"></div>
   </div>
 
