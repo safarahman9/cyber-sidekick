@@ -105,15 +105,24 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 // short verbatim quotes privacy-scan.js already returned. No new page
 // content is read or sent anywhere, this only searches text already
 // visible in the tab it opens.
-function highlightQuotesInPage(quotes) {
-  if (!Array.isArray(quotes) || !quotes.length) return;
+function highlightQuotesInPage(items) {
+  if (!Array.isArray(items) || !items.length) return;
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
   const nodes = [];
   let n;
   while ((n = walker.nextNode())) nodes.push(n);
 
+  const COLORS = {
+    high: { bg: '#FBC7C4', fg: '#7A2A28' },
+    medium: { bg: '#FDE7B8', fg: '#5C3D00' }
+  };
+
   let firstMark = null;
-  for (const quote of quotes) {
+  for (const item of items) {
+    // Backward-compatible: accept either a plain string or {quote, severity}.
+    const quote = typeof item === 'string' ? item : item.quote;
+    const severity = (typeof item === 'object' && item.severity === 'high') ? 'high' : 'medium';
+    if (!quote) continue;
     const needle = quote.trim();
     if (needle.length < 4) continue;
     for (const node of nodes) {
@@ -124,9 +133,10 @@ function highlightQuotesInPage(quotes) {
       range.setStart(node, idx);
       range.setEnd(node, idx + needle.length);
       const mark = document.createElement('mark');
-      mark.style.background = '#FFE066';
-      mark.style.color = '#1A1A2B';
-      mark.title = 'Flagged by Cybersafety Superhero';
+      const colors = COLORS[severity];
+      mark.style.background = colors.bg;
+      mark.style.color = colors.fg;
+      mark.title = severity === 'high' ? 'High concern - flagged by Cybersafety Superhero' : 'Worth reviewing - flagged by Cybersafety Superhero';
       try {
         range.surroundContents(mark);
         if (!firstMark) firstMark = mark;
