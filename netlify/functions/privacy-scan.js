@@ -71,6 +71,40 @@ async function fetchPolicyText(url) {
   }
 }
 
+// Finds a company's REAL privacy policy URL via live web search, rather
+// than guessing common paths (which is what this used to do - too brittle,
+// real sites use all kinds of paths: /policies/privacy-policy/,
+// /trust/privacy/, /legal/privacy-notice/, etc, and plenty of sites like
+// Canva render their footer client-side, so a raw fetch of the homepage
+// finds nothing to guess from either). Same web_search tool chat.js already
+// uses, same API key, no new setup.
+async function findPolicyUrlViaSearch(company) {
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 300,
+        system: "You find the exact URL of a company's official, currently live privacy policy page. Use web search. Respond with ONLY the URL on a single line, nothing else, no explanation. If you genuinely cannot find one, respond with exactly: NOT_FOUND",
+        messages: [{ role: "user", content: `Company or domain: ${company}` }],
+        tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3 }]
+      })
+    });
+    const data = await res.json();
+    const raw = (data.content || []).map((b) => (b.type === "text" ? b.text : "")).join(" ").trim();
+    const match = raw.match(/https?:\/\/[^\s"'<>)\]]+/);
+    if (!match || /NOT_FOUND/.test(raw)) return null;
+    return match[0];
+  } catch (e) {
+    return null;
+  }
+}
+
 function buildSystem() {
   return `You are a privacy policy analyst for Cybersafety Superhero. You will be given the visible text of a company's privacy policy or terms page. Summarize it plainly, for someone with no legal background, so they can decide whether to trust the site with their data.
 
@@ -102,35 +136,43 @@ exports.handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || "{}");
-    const url = typeof body.url === "string" ? body.url.trim().slice(0, 2000) : "";
+    let url = typeof body.url === "string" ? body.url.trim().slice(0, 2000) : "";
+    const company = typeof body.company === "string" ? body.company.trim().slice(0, 200) : "";
     let text = typeof body.text === "string" ? body.text.trim().slice(0, 18000) : "";
 
-    if (!url && !text) {
-      return { statusCode: 400, body: JSON.stringify({ error: "No policy URL or text provided" }) };
+    if (!url && !company && !text) {
+      return { statusCode: 400, body: JSON.stringify({ error: "No policy URL, company, or text provided" }) };
     }
     if (!process.env.ANTHROPIC_API_KEY) {
       return { statusCode: 503, body: JSON.stringify({ error: "Privacy scan is not configured on this deployment (missing ANTHROPIC_API_KEY)." }) };
     }
 
-    // Prefer fetching the URL fresh server-side, so the extension only has
-    // to find the link, not read the whole page itself. Fall back to
-    // client-supplied text if no URL, or if the fetch fails.
+    // Prefer fetching a given URL fresh server-side. If that's missing or
+    // fails, and a company/domain was given instead, search for the real
+    // policy URL rather than guessing at paths.
+    let fetched = null;
     if (url) {
-      let parsedUrl;
-      try { parsedUrl = new URL(url); } catch (e) {
+      try { new URL(url); } catch (e) {
         return { statusCode: 400, body: JSON.stringify({ error: "That doesn't look like a valid URL." }) };
       }
-      if (!/^https?:$/.test(parsedUrl.protocol)) {
-        return { statusCode: 400, body: JSON.stringify({ error: "Only http/https links can be scanned." }) };
-      }
-      const fetched = await fetchPolicyText(url);
-      if (fetched.ok) {
-        text = fetched.text;
-      } else if (!text) {
-        return { statusCode: 502, body: JSON.stringify({ error: fetched.error }) };
-      }
-      // else: fetch failed but client already sent text as a fallback, use that.
+      fetched = await fetchPolicyText(url);
     }
+
+    if ((!fetched || !fetched.ok) && company) {
+      const found = await findPolicyUrlViaSearch(company);
+      if (!found) {
+        return { statusCode: 502, body: JSON.stringify({ error: `Couldn't find a privacy policy for ${company}, even with a live search. Try pasting the exact policy URL instead.` }) };
+      }
+      url = found;
+      fetched = await fetchPolicyText(url);
+    }
+
+    if (fetched && fetched.ok) {
+      text = fetched.text;
+    } else if (!text) {
+      return { statusCode: 502, body: JSON.stringify({ error: (fetched && fetched.error) || "Could not load that page." }) };
+    }
+    // else: fetch failed but client already sent text as a fallback, use that.
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
