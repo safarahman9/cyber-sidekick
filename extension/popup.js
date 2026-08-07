@@ -1,4 +1,4 @@
-// popup.js — runs the "Scan this page" button and the auto-check toggle.
+// popup.js runs the "Scan this page" button and the auto-check toggle.
 //
 // SAFEGUARDS (read this before changing anything):
 // 1. "Scan this page" only runs on click, using `activeTab`, access to the
@@ -338,18 +338,121 @@ privBtn.addEventListener('click', async () => {
   }
 });
 
-/* ---------- privacy policy scanner: manual URL fallback ---------- */
+/* ---------- privacy policy scanner: lookup by company name or domain ---------- */
+// This doesn't touch the current tab at all - it fetches the COMPANY'S
+// homepage itself (extension host_permissions allow this cross-origin),
+// parses it for a privacy-policy link the same way findPolicyLinkInPage
+// does on a live page, and falls back to common paths if that comes up
+// empty. Works from any tab, or even with no relevant tab open at all.
 const privManualUrl = document.getElementById('privManualUrl');
 const privManualBtn = document.getElementById('privManualBtn');
 
+function resolveOrigin(input) {
+  let v = input.trim();
+  if (!v) return null;
+  if (!/^https?:\/\//i.test(v)) {
+    // Bare domain ("netflix.com") or plain company name ("Netflix").
+    if (/\s/.test(v) || !v.includes('.')) {
+      // Plain name with no dot: best-effort guess at a .com domain.
+      v = v.toLowerCase().replace(/[^a-z0-9]+/g, '') + '.com';
+    }
+    v = 'https://' + v;
+  }
+  try { return new URL(v).origin; } catch (e) { return null; }
+}
+
+// Same scoring approach as findPolicyLinkInPage, but run against HTML text
+// fetched directly rather than a live page's DOM, using DOMParser (which
+// popup.js has full access to, being a regular extension page).
+function extractPolicyLinkFromHtml(html, origin) {
+  const TEXT_PATTERN = /privacy( policy| notice)?|data protection|your data|gdpr|ccpa/i;
+  const PATH_PATTERN = /\/(privacy|privacy-policy|privacy-notice|data-protection|legal\/privacy)(\/|$|[?#])/i;
+  const EXCLUDE = /privacy settings|cookie settings|privacy preferences|manage cookies/i;
+
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  function resolve(href) {
+    try { return new URL(href, origin).href; } catch (e) { return null; }
+  }
+  function scoreAnchor(a) {
+    const label = (a.textContent || '').trim();
+    const aria = (a.getAttribute('aria-label') || '').trim();
+    const rawHref = a.getAttribute('href') || '';
+    const href = resolve(rawHref);
+    if (!href || !/^https?:/.test(href)) return null;
+    if (EXCLUDE.test(label) || EXCLUDE.test(aria)) return null;
+    let path = '';
+    try { path = new URL(href).pathname; } catch (e) { /* ignore */ }
+    const textMatch = TEXT_PATTERN.test(label) || TEXT_PATTERN.test(aria);
+    const pathMatch = PATH_PATTERN.test(path);
+    if (!textMatch && !pathMatch) return null;
+    return { href, score: (textMatch ? 2 : 0) + (pathMatch ? 1 : 0) };
+  }
+  function bestFrom(anchors) {
+    let best = null;
+    for (const a of anchors) {
+      const scored = scoreAnchor(a);
+      if (scored && (!best || scored.score > best.score)) best = scored;
+    }
+    return best;
+  }
+  const footer = doc.querySelector('footer');
+  const footerAnchors = footer ? Array.from(footer.querySelectorAll('a[href]')) : [];
+  const allAnchors = Array.from(doc.querySelectorAll('a[href]'));
+  const best = bestFrom(footerAnchors) || bestFrom(allAnchors);
+  return best ? best.href : null;
+}
+
+async function findPolicyForOrigin(origin) {
+  // 1. Fetch the homepage itself and look for a policy link in it.
+  try {
+    const res = await fetchWithTimeout(origin, 6000);
+    if (res && res.ok) {
+      const html = await res.text();
+      const found = extractPolicyLinkFromHtml(html, origin);
+      if (found) return found;
+    }
+  } catch (e) { /* homepage unreachable, fall through to path guessing */ }
+
+  // 2. No link found (or homepage unreachable) - try standard paths.
+  return await guessPolicyUrl(origin);
+}
+
 async function runManualScan() {
-  const url = privManualUrl.value.trim();
-  if (!url) { privNote.textContent = 'Paste a privacy policy URL first.'; return; }
+  const input = privManualUrl.value.trim();
+  if (!input) { privNote.textContent = 'Enter a company name, domain, or policy URL first.'; return; }
+
   privManualBtn.disabled = true;
   const original = privManualBtn.textContent;
-  privManualBtn.textContent = '…';
+  privNote.textContent = '';
+  privResult.classList.remove('show');
+
   try {
-    await scanPolicyUrl(url, null);
+    // If it's already a full URL to a specific page (has a path beyond
+    // "/"), trust it and scan directly - this is still the fastest path
+    // when someone already has the exact policy link handy.
+    if (/^https?:\/\//i.test(input)) {
+      let hasPath = false;
+      try { hasPath = new URL(input).pathname.replace(/\/$/, '').length > 0; } catch (e) { /* ignore */ }
+      if (hasPath) {
+        privManualBtn.textContent = '…';
+        await scanPolicyUrl(input, null);
+        return;
+      }
+    }
+
+    // Otherwise treat the input as a company/domain and go find it.
+    const origin = resolveOrigin(input);
+    if (!origin) { privNote.textContent = "That doesn't look like a company name, domain, or URL."; return; }
+
+    privManualBtn.textContent = 'Finding policy…';
+    const found = await findPolicyForOrigin(origin);
+    if (!found) {
+      privNote.textContent = `Couldn't find a privacy policy for ${origin.replace(/^https?:\/\//, '')}. Try pasting the exact policy URL instead.`;
+      return;
+    }
+
+    privManualBtn.textContent = 'Scanning…';
+    await scanPolicyUrl(found, null);
   } finally {
     privManualBtn.disabled = false;
     privManualBtn.textContent = original;
