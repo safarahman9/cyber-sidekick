@@ -14,7 +14,7 @@
 const { app, BrowserWindow, shell } = require("electron");
 const path = require("path");
 
-const APP_URL = "https://unique-khapse-3e711e.netlify.app/";
+const APP_URL = "https://aicybersafetysuperhero.netlify.app/";
 
 function createWindow() {
   const win = new BrowserWindow({
