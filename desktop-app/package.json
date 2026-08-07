@@ -1,0 +1,40 @@
+{
+  "name": "cybersafety-superhero-desktop",
+  "version": "1.0.0",
+  "description": "Desktop app for Cybersafety Superhero, a native wrapper around the web app.",
+  "main": "main.js",
+  "author": "Team T3",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.knowledgeflow.cybersafetysuperhero",
+    "productName": "Cybersafety Superhero",
+    "files": ["main.js", "icon.png", "package.json"],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.png"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "icon.png",
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "icon.png",
+      "category": "Utility"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
