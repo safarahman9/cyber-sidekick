@@ -224,24 +224,27 @@ function renderPrivacyResult(data, policyUrl) {
 }
 
 // Shared by both the auto-detect button and the manual-paste fallback.
-async function scanPolicyUrl(targetUrl, fallbackText) {
+async function scanPolicy({ url, company, text }) {
   privResult.classList.remove('show');
   privNote.textContent = '';
-  try {
-    const parsed = new URL(targetUrl);
-    if (!/^https?:$/.test(parsed.protocol)) {
-      privNote.textContent = 'Please enter a valid http(s) URL.';
+
+  if (url) {
+    try {
+      const parsed = new URL(url);
+      if (!/^https?:$/.test(parsed.protocol)) {
+        privNote.textContent = 'Please enter a valid http(s) URL.';
+        return;
+      }
+    } catch (e) {
+      privNote.textContent = "That doesn't look like a valid URL.";
       return;
     }
-  } catch (e) {
-    privNote.textContent = "That doesn't look like a valid URL.";
-    return;
   }
 
   const res = await fetch(PRIVACY_ENDPOINT, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ url: targetUrl, text: fallbackText || undefined })
+    body: JSON.stringify({ url: url || undefined, company: company || undefined, text: text || undefined })
   });
   const data = await res.json();
 
@@ -251,43 +254,13 @@ async function scanPolicyUrl(targetUrl, fallbackText) {
   }
 
   privNote.textContent = '';
-  renderPrivacyResult(data, targetUrl);
+  renderPrivacyResult(data, data.url || url);
 }
 
-// If no link was found in the page's DOM, most sites still put their policy
-// at one of a handful of standard paths. Try those against the same origin
-// before giving up - this covers link text/markup patterns the DOM search
-// didn't anticipate (JS-rendered footers, mega-menus, unusual wording).
-// Runs from the extension's own context, which has broad host_permissions,
-// so this cross-origin check isn't blocked by the page's own CORS policy.
-const COMMON_POLICY_PATHS = [
-  '/privacy', '/privacy-policy', '/privacypolicy', '/privacy-notice',
-  '/legal/privacy', '/legal/privacy-policy', '/policies/privacy',
-  '/about/privacy', '/en/privacy', '/privacy.html'
-];
-
-async function fetchWithTimeout(url, ms) {
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), ms);
-  try {
-    return await fetch(url, { method: 'GET', signal: controller.signal, redirect: 'follow' });
-  } finally {
-    clearTimeout(t);
-  }
-}
-
-async function guessPolicyUrl(origin) {
-  const attempts = COMMON_POLICY_PATHS.map(async (path) => {
-    try {
-      const res = await fetchWithTimeout(origin + path, 4000);
-      return res && res.ok ? res.url : null;
-    } catch (e) {
-      return null;
-    }
-  });
-  const results = await Promise.all(attempts);
-  return results.find(Boolean) || null;
-}
+// Same trust model as "Scan this page": activeTab + scripting, only on
+// click. If findPolicyLinkInPage can't find a link in the live DOM, the
+// company/origin is sent to the server, which searches for the real URL
+// (see privacy-scan.js / findPolicyUrlViaSearch) rather than guessing.
 
 privBtn.addEventListener('click', async () => {
   privBtn.disabled = true;
@@ -309,27 +282,21 @@ privBtn.addEventListener('click', async () => {
       func: findPolicyLinkInPage
     });
 
-    let targetUrl = null;
-    let fallbackText = null;
-
     if (result.linkUrl) {
       // Found an actual privacy-policy link on the page - scan THAT page.
-      targetUrl = result.linkUrl;
+      privBtn.textContent = 'Scanning…';
+      await scanPolicy({ url: result.linkUrl });
     } else if (result.currentLooksLikePolicy) {
       // No link found, but they're already sitting on what looks like a policy page.
-      targetUrl = result.currentUrl;
-      fallbackText = result.fallbackText;
+      privBtn.textContent = 'Scanning…';
+      await scanPolicy({ url: result.currentUrl, text: result.fallbackText });
     } else {
-      privBtn.textContent = 'Trying common paths…';
-      targetUrl = await guessPolicyUrl(result.origin);
-      if (!targetUrl) {
-        privNote.textContent = "Couldn't find a privacy policy on this page or at any standard location. Try the box below to paste one directly.";
-        return;
-      }
+      // No link visible in the page's DOM (common on app pages with no
+      // marketing footer, or JS-rendered footers). Let the server search
+      // for the company's real policy page rather than guessing at paths.
+      privBtn.textContent = 'Searching for policy…';
+      await scanPolicy({ company: result.origin });
     }
-
-    privBtn.textContent = 'Scanning…';
-    await scanPolicyUrl(targetUrl, fallbackText);
   } catch (err) {
     privNote.textContent = "Couldn't read this page (some pages, like the Chrome Web Store or internal browser pages, can't be scanned).";
   } finally {
@@ -402,8 +369,22 @@ function extractPolicyLinkFromHtml(html, origin) {
   return best ? best.href : null;
 }
 
+async function fetchWithTimeout(url, ms) {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { method: 'GET', signal: controller.signal, redirect: 'follow' });
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 async function findPolicyForOrigin(origin) {
-  // 1. Fetch the homepage itself and look for a policy link in it.
+  // Quick free check: fetch the homepage itself and look for a policy link
+  // in its raw HTML. Cheap and instant when it works (most non-SPA sites).
+  // Misses client-side-rendered footers (e.g. Canva) - that's fine, the
+  // caller falls through to the server's web-search-based lookup instead
+  // of guessing at paths.
   try {
     const res = await fetchWithTimeout(origin, 6000);
     if (res && res.ok) {
@@ -411,10 +392,8 @@ async function findPolicyForOrigin(origin) {
       const found = extractPolicyLinkFromHtml(html, origin);
       if (found) return found;
     }
-  } catch (e) { /* homepage unreachable, fall through to path guessing */ }
-
-  // 2. No link found (or homepage unreachable) - try standard paths.
-  return await guessPolicyUrl(origin);
+  } catch (e) { /* homepage unreachable, let the caller fall back to search */ }
+  return null;
 }
 
 async function runManualScan() {
@@ -435,24 +414,27 @@ async function runManualScan() {
       try { hasPath = new URL(input).pathname.replace(/\/$/, '').length > 0; } catch (e) { /* ignore */ }
       if (hasPath) {
         privManualBtn.textContent = '…';
-        await scanPolicyUrl(input, null);
+        await scanPolicy({ url: input });
         return;
       }
     }
 
-    // Otherwise treat the input as a company/domain and go find it.
+    // Otherwise treat the input as a company/domain. Try the quick
+    // homepage scrape first (free, instant), then let the server search
+    // for the real URL if that comes up empty.
     const origin = resolveOrigin(input);
     if (!origin) { privNote.textContent = "That doesn't look like a company name, domain, or URL."; return; }
 
     privManualBtn.textContent = 'Finding policy…';
     const found = await findPolicyForOrigin(origin);
-    if (!found) {
-      privNote.textContent = `Couldn't find a privacy policy for ${origin.replace(/^https?:\/\//, '')}. Try pasting the exact policy URL instead.`;
+    if (found) {
+      privManualBtn.textContent = 'Scanning…';
+      await scanPolicy({ url: found });
       return;
     }
 
-    privManualBtn.textContent = 'Scanning…';
-    await scanPolicyUrl(found, null);
+    privManualBtn.textContent = 'Searching…';
+    await scanPolicy({ company: origin });
   } finally {
     privManualBtn.disabled = false;
     privManualBtn.textContent = original;
