@@ -2,9 +2,38 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Cyber Sidekick</title>
+<title>Cybersafety Superhero</title>
 <style>
-  html, body { margin: 0; padding: 0; width: 400px; height: 660px; background: #FBFAF8; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; }
+  html, body { margin: 0; padding: 0; width: 400px; max-height: 600px; background: #FBFAF8; overflow-y: auto; overflow-x: hidden; font-family: 'Inter', system-ui, sans-serif; }
+  .card { padding: 12px; border-bottom: 1px solid #ECEAE5; }
+  .card h2 { font-size: 12.5px; font-weight: 700; color: #1A1A2B; margin: 0 0 8px; }
+  .legend { display: flex; gap: 6px; }
+  .legend-item { flex: 1; text-align: center; border-radius: 8px; padding: 7px 4px; font-size: 10px; line-height: 1.4; }
+  .legend-item.safe { background: #E6F4EA; color: #1E7A3D; }
+  .legend-item.caution { background: #FDF0DC; color: #B26A00; }
+  .legend-item.danger { background: #FBE7E6; color: #C5221F; }
+  .legend-item strong { display: block; font-size: 11px; margin-bottom: 2px; }
+  .tips { margin: 0; padding-left: 16px; font-size: 11.5px; color: #55556A; line-height: 1.6; }
+  .report-btn { width: 100%; background: #FBE7E6; color: #C5221F; border: none; padding: 9px 10px; border-radius: 9px; font-weight: 600; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .report-btn:hover { background: #F3C6C4; }
+
+  .privbtn { width: 100%; background: #3F3D9E; color: #fff; border: none; padding: 9px 10px; border-radius: 9px; font-weight: 600; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .privbtn:hover { background: #332f8a; }
+  .privbtn:disabled { opacity: .55; cursor: default; }
+  .privnote { font-size: 10.5px; color: #9A9AAB; margin-top: 6px; line-height: 1.4; }
+  .privresult { display: none; margin-top: 10px; }
+  .privresult.show { display: block; }
+  .priv-risk { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 999px; margin-bottom: 6px; }
+  .priv-risk.low { background: #E6F4EA; color: #1E7A3D; }
+  .priv-risk.medium { background: #FDF0DC; color: #B26A00; }
+  .priv-risk.high { background: #FBE7E6; color: #C5221F; }
+  .priv-summary { font-size: 12px; color: #1A1A2B; line-height: 1.5; margin: 4px 0 8px; }
+  .priv-section { margin-bottom: 8px; }
+  .priv-section h3 { font-size: 11px; font-weight: 700; color: #55556A; margin: 0 0 4px; text-transform: uppercase; letter-spacing: .02em; }
+  .priv-section ul { margin: 0; padding-left: 15px; font-size: 11.5px; color: #1A1A2B; line-height: 1.55; }
+  .priv-section.flags ul { color: #C5221F; }
+  .priv-link { display: inline-block; margin-top: 4px; font-size: 11.5px; color: #3F3D9E; text-decoration: none; font-weight: 600; }
+  .priv-link:hover { text-decoration: underline; }
   .scanbar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #FBFAF8; border-bottom: 1px solid #ECEAE5; }
   .scanbtn { flex: 1; background: #3F3D9E; color: #fff; border: none; padding: 9px 12px; border-radius: 9px; font-weight: 600; font-size: 12.5px; cursor: pointer; font-family: inherit; }
   .scanbtn:hover { background: #332f8a; }
@@ -26,12 +55,12 @@
   .flagbanner .fb-title { font-size: 12.5px; font-weight: 700; color: #C5221F; margin-bottom: 3px; }
   .flagbanner .fb-body { font-size: 11px; color: #7A2A28; line-height: 1.4; }
 
-  iframe { width: 100%; height: 542px; border: none; display: block; }
+  iframe { width: 100%; height: 420px; border: none; display: block; }
 </style>
 </head>
 <body>
   <!--
-    The main body is a thin shell that loads the live Cyber Sidekick PWA in
+    The main body is a thin shell that loads the live Cybersafety Superhero PWA in
     an iframe, keeping one source of truth for the chat logic and diary.
 
     "Scan this page" uses activeTab: access to the current tab only, only
@@ -64,7 +93,40 @@
     </div>
   </div>
 
-  <iframe id="app" src="https://unique-khapse-3e711e.netlify.app/" title="Cyber Sidekick"></iframe>
+  <div class="card">
+    <h2>📄 Privacy Policy Scanner</h2>
+    <p style="font-size:11.5px;color:#55556A;margin:0 0 8px;line-height:1.5;">Open a company's privacy policy or terms page, then scan it for a plain-language summary of what data they collect, who they share it with, and your rights.</p>
+    <button class="privbtn" id="privBtn">📄 Scan this policy</button>
+    <div class="privnote" id="privNote">Reads the current tab's visible text only when you click.</div>
+    <div class="privresult" id="privResult"></div>
+  </div>
+
+  <iframe id="app" src="https://unique-khapse-3e711e.netlify.app/" title="Cybersafety Superhero"></iframe>
+
+  <div class="card">
+    <h2> Risk Legend</h2>
+    <div class="legend">
+      <div class="legend-item safe"><strong> SAFE</strong>Low risk</div>
+      <div class="legend-item caution"><strong> CAUTION</strong>Review carefully</div>
+      <div class="legend-item danger"><strong> HIGH RISK</strong>Avoid sharing info</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2> Cyber Safety Tips</h2>
+    <ul class="tips">
+      <li>Pause before responding to urgent requests.</li>
+      <li>Never share passwords or verification codes.</li>
+      <li>Verify unexpected requests using a trusted channel.</li>
+      <li>Be cautious with links and attachments.</li>
+      <li>Don't send money because someone is pressuring you.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2> Report Fraud or Cybercrime</h2>
+    <button class="report-btn" id="reportBtn">Report to Canadian Anti-Fraud Centre</button>
+  </div>
 
   <script src="popup.js"></script>
 </body>
