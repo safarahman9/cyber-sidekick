@@ -1,6 +1,6 @@
 {
-  "name": "Cyber Sidekick",
-  "short_name": "Cyber Sidekick",
+  "name": "AI Cybersafety Superhero",
+  "short_name": "Superhero",
   "description": "Check if a text, email, or call is a scam.",
   "start_url": "./index.html",
   "display": "standalone",
