@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cyber Sidekick</title>
+<title>AI Cybersafety Superhero</title>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#3F3D9E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,6 +20,17 @@
   html{scroll-behavior:smooth;}
   body{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;}
   body.large{--msg:18px;font-size:19px;}
+  /* Accessibility: high contrast swaps the palette via the same CSS vars everything already uses */
+  body.a11y-contrast{--bg:#000000;--ink:#FFFFFF;--ink-soft:#F2F2F2;--muted:#E2E2E2;--line:#555555;--accent:#FFD400;--card:#111111;}
+  body.a11y-contrast .btn-primary,body.a11y-contrast .nav-cta{color:#000;}
+  /* Accessibility: dyslexia-friendly widens spacing and swaps to a rounder, more open font stack */
+  body.a11y-dyslexia{font-family:Verdana,'Comic Sans MS',Tahoma,sans-serif;letter-spacing:.02em;word-spacing:.06em;line-height:1.85;}
+  .a11y-btn{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;}
+  .a11y-btn:hover{background:var(--line);}
+  .a11y-panel{display:none;position:absolute;right:24px;top:56px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:60;min-width:200px;}
+  .a11y-panel.open{display:block;}
+  .a11y-row{display:flex;align-items:center;gap:9px;padding:6px 0;font-size:13.5px;color:var(--ink);}
+  .a11y-row input{width:16px;height:16px;}
   .page{max-width:760px;margin:0 auto;padding:0 24px;}
 
   /* Sticky site nav: logo, section links, CTA */
@@ -179,6 +190,14 @@
   .lc-btn{align-self:flex-start;margin-top:8px;font-size:13.5px;font-weight:500;color:#fff;background:var(--accent);border:none;padding:9px 16px;border-radius:9px;cursor:grab;text-decoration:none;font-family:inherit;}
   .lc-sublink{align-self:flex-start;margin-top:8px;font-size:12.5px;font-weight:500;color:var(--accent);text-decoration:none;}
   .lc-sublink:hover{text-decoration:underline;}
+  .lc-manual{align-self:flex-start;margin-top:6px;font-size:11.5px;}
+  .lc-manual summary{cursor:pointer;color:var(--muted);font-weight:500;list-style:none;}
+  .lc-manual summary::-webkit-details-marker{display:none;}
+  .lc-manual summary:hover{color:var(--accent);}
+  .lc-manual summary::before{content:"Or install it manually ";}
+  .lc-manual[open] summary::before{content:"Hide manual install steps ";}
+  .lc-manual ol{margin:8px 0 0;padding-left:18px;color:var(--muted);line-height:1.6;}
+  .lc-manual a{color:var(--accent);}
   .launch-card.lc-clickable{cursor:pointer;}
   .launch-card.lc-clickable:hover .lc-sublink{text-decoration:underline;}
   .lc-btn:hover{background:#332f8a;}
@@ -277,14 +296,20 @@
   <div class="page navrow">
     <div class="navbrand">
       <svg class="shield"><use href="#shield"/></svg>
-      <span class="mark">Cyber Sidekick</span>
+      <span class="mark">AI Cybersafety Superhero</span>
     </div>
     <div class="navlinks">
       <button class="tab-btn" data-target="launch">Ways to use it</button>
       <button class="tab-btn" id="tabDiary" data-target="diary" disabled>Diary</button>
       <button class="tab-btn" id="tabSites" data-target="sitesBlock" disabled>Sites</button>
     </div>
+    <button class="a11y-btn" id="a11yBtn" aria-haspopup="true" aria-expanded="false" title="Accessibility settings">♿ Accessibility</button>
     <button class="nav-cta" data-target="checker">Check a message</button>
+  </div>
+  <div class="a11y-panel" id="a11yPanel" role="menu" aria-label="Accessibility settings">
+    <label class="a11y-row"><input type="checkbox" id="a11yLarge"> Larger text</label>
+    <label class="a11y-row"><input type="checkbox" id="a11yContrast"> High contrast</label>
+    <label class="a11y-row"><input type="checkbox" id="a11yDyslexia"> Dyslexia-friendly font</label>
   </div>
 </nav>
 
@@ -332,6 +357,16 @@
         <div class="lc-body" id="lcInstallBody">Add it to your home screen or desktop so it opens on its own, no browser tab needed.</div>
         <button class="lc-btn" id="installBtn" hidden>Install</button>
         <a class="lc-sublink" href="https://chromewebstore.google.com/detail/cyber-sidekick/fepefcijgaimbcgllleoajclfkaipkbag" target="_blank" rel="noopener noreferrer">Or get the browser extension →</a>
+        <details class="lc-manual">
+          <summary></summary>
+          <ol>
+            <li><a href="https://github.com/safarahman9/cyber-sidekick" target="_blank" rel="noopener noreferrer">Download the extension folder</a> from GitHub (Code → Download ZIP, then unzip it).</li>
+            <li>Open <code>chrome://extensions</code> in Chrome.</li>
+            <li>Turn on <b>Developer mode</b> (top right corner).</li>
+            <li>Click <b>Load unpacked</b> and select the unzipped <code>extension</code> folder.</li>
+            <li>Pin it to your toolbar from the puzzle-piece icon.</li>
+          </ol>
+        </details>
       </div>
       <div class="launch-card">
         <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg></div>
@@ -342,7 +377,7 @@
       <div class="launch-card">
         <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-3.9M8.6 13.5l6.8 3.9"/></svg></div>
         <div class="lc-title">Share it in</div>
-        <div class="lc-body">On your phone, hit Share on a message, screenshot, or link and pick Cyber Sidekick from the list.</div>
+        <div class="lc-body">On your phone, hit Share on a message, screenshot, or link and pick AI Cybersafety Superhero from the list.</div>
       </div>
       <div class="launch-card lc-clickable" id="lcPasteCard" role="button" tabindex="0">
         <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3"/><path d="M9 12h6M9 16h6"/></svg></div>
@@ -464,10 +499,10 @@
 
 <script>
 const GREET = {
-  me:"Hi, I'm Cyber Sidekick, an AI helper for spotting scams. I'm not a real person, but I'm here whenever something feels off. Tap an example, paste a message, or add a screenshot.",
-  senior:"Hello. I'm Cyber Sidekick, a friendly helper for checking if something is a scam. I am not a real person, just a helpful program. Take your time. You can tap an example, paste the message, or add a photo of it.",
-  youth:"Hey, I'm Cyber Sidekick, an AI that helps you spot scams. Not a real person, just here to help. Tap one of these, paste whatever looks sketchy, or drop in a screenshot.",
-  educator:"Hi, I'm Cyber Sidekick, an AI helper. I am not a real person. I'll break each scam down so you can show students how to spot one. Tap an example, paste a message, or add a screenshot."
+  me:"Hi, I'm AI Cybersafety Superhero, an AI helper for spotting scams. I'm not a real person, but I'm here whenever something feels off. Tap an example, paste a message, or add a screenshot.",
+  senior:"Hello. I'm AI Cybersafety Superhero, a friendly helper for checking if something is a scam. I am not a real person, just a helpful program. Take your time. You can tap an example, paste the message, or add a photo of it.",
+  youth:"Hey, I'm AI Cybersafety Superhero, an AI that helps you spot scams. Not a real person, just here to help. Tap one of these, paste whatever looks sketchy, or drop in a screenshot.",
+  educator:"Hi, I'm AI Cybersafety Superhero, an AI helper. I am not a real person. I'll break each scam down so you can show students how to spot one. Tap an example, paste a message, or add a screenshot."
 };
 
 const CHIP_TEXT = {
@@ -1107,7 +1142,7 @@ function openSiteModal(entry){
   html += '<a class="modal-link" href="'+entry.url+'" target="_blank" rel="noopener noreferrer">'+esc(entry.url)+'</a>';
   if(entry.thumb) html += '<div style="margin-top:12px"><img class="modal-thumb" src="'+entry.thumb+'" alt="Screenshot involved in this scan"></div>';
   if(entry.reply){
-    html += '<div class="modal-h">What Cyber Sidekick said</div><div class="modal-text">'+esc(entry.reply)+'</div>';
+    html += '<div class="modal-h">What AI Cybersafety Superhero said</div><div class="modal-text">'+esc(entry.reply)+'</div>';
   }
   html += factorsHtml(entry.factors);
   html += actionsHtml(entry.actions);
@@ -1130,11 +1165,45 @@ function greet(){
   botBubble(GREET[mode]); // greeting is not logged
 }
 
+/* ---------- accessibility settings (large text / high contrast / dyslexia-friendly) ---------- */
+const A11Y_KEY='a11yPrefs';
+function loadA11y(){
+  try{ return Object.assign({large:false,contrast:false,dyslexia:false}, JSON.parse(localStorage.getItem(A11Y_KEY))||{}); }
+  catch(e){ return {large:false,contrast:false,dyslexia:false}; }
+}
+function saveA11y(p){ try{ localStorage.setItem(A11Y_KEY, JSON.stringify(p)); }catch(e){} }
+function applyA11y(){
+  const p=loadA11y();
+  // Large text is ON if either the manual toggle is checked or senior mode is active.
+  document.body.classList.toggle('large', p.large || mode==='senior');
+  document.body.classList.toggle('a11y-contrast', p.contrast);
+  document.body.classList.toggle('a11y-dyslexia', p.dyslexia);
+  a11yLargeBox.checked=p.large; a11yContrastBox.checked=p.contrast; a11yDyslexiaBox.checked=p.dyslexia;
+}
+const a11yBtn=document.getElementById('a11yBtn'), a11yPanel=document.getElementById('a11yPanel');
+const a11yLargeBox=document.getElementById('a11yLarge'), a11yContrastBox=document.getElementById('a11yContrast'), a11yDyslexiaBox=document.getElementById('a11yDyslexia');
+a11yBtn.addEventListener('click', e=>{
+  e.stopPropagation();
+  const open=a11yPanel.classList.toggle('open');
+  a11yBtn.setAttribute('aria-expanded', open?'true':'false');
+});
+document.addEventListener('click', e=>{
+  if(!a11yPanel.contains(e.target) && e.target!==a11yBtn) a11yPanel.classList.remove('open');
+});
+[a11yLargeBox,a11yContrastBox,a11yDyslexiaBox].forEach(box=>{
+  box.addEventListener('change', ()=>{
+    const p=loadA11y();
+    p.large=a11yLargeBox.checked; p.contrast=a11yContrastBox.checked; p.dyslexia=a11yDyslexiaBox.checked;
+    saveA11y(p); applyA11y();
+  });
+});
+applyA11y();
+
 aud.addEventListener('click',e=>{
   const b=e.target.closest('.aud');if(!b)return;
   mode=b.dataset.mode;
   [...aud.children].forEach(c=>c.classList.toggle('active',c===b));
-  document.body.classList.toggle('large', mode==='senior');
+  applyA11y();
   greet();
 });
 
