@@ -77,7 +77,7 @@ scanBtn.addEventListener('click', async () => {
     });
     // Reuses the same ?scanurl=&scantitle=&scantext= handler the bookmarklet
     // and share-target already use on the live site, no new endpoint needed.
-    app.src = 'https://unique-khapse-3e711e.netlify.app/?' + params.toString();
+    app.src = 'https://aicybersafetysuperhero.netlify.app/?' + params.toString();
     scanNote.textContent = 'Sent the current page to AI Cybersafety Superhero below.';
   } catch (err) {
     scanNote.textContent = "Couldn't read this page (some pages, like the Chrome Web Store or internal browser pages, can't be scanned). Paste text into the chat below instead.";
@@ -114,7 +114,7 @@ document.getElementById('reportBtn').addEventListener('click', () => {
 // fetches and reads THAT page server-side, not the page the person started
 // on. Falls back to scanning the current page directly only if it already
 // looks like a policy page itself, or if no link could be found at all.
-const PRIVACY_ENDPOINT = 'https://unique-khapse-3e711e.netlify.app/.netlify/functions/privacy-scan';
+const PRIVACY_ENDPOINT = 'https://aicybersafetysuperhero.netlify.app/.netlify/functions/privacy-scan';
 
 const privBtn = document.getElementById('privBtn');
 const privNote = document.getElementById('privNote');
