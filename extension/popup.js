@@ -1,4 +1,4 @@
-// popup.js, runs the "Scan this page" button and the auto-check toggle.
+// popup.js runs the "Scan this page" button and the auto-check toggle.
 //
 // SAFEGUARDS (read this before changing anything):
 // 1. "Scan this page" only runs on click, using `activeTab`, access to the
@@ -129,28 +129,62 @@ function escapeHTML(value) {
 // Runs inside the page (via executeScript). Looks for the most likely
 // privacy-policy link on the page, and separately reports whether the
 // CURRENT page itself already looks like a policy/terms page.
+//
+// Broadened after real-world testing turned up misses: many sites put the
+// link in a <footer> with generic-looking text ("Privacy"), or the link
+// text doesn't say "privacy" at all but the URL path does (icon links,
+// "Legal" dropdowns). This checks, in order: footer links first (where
+// policy links usually live), then any link anywhere, matching on EITHER
+// visible text OR the URL path, plus aria-label as a third signal.
 function findPolicyLinkInPage() {
-  const PATTERN = /privacy( policy)?|data protection|your data|gdpr/i;
-  const EXCLUDE = /privacy settings|cookie settings|privacy preferences/i;
-  const anchors = Array.from(document.querySelectorAll('a[href]'));
-  let best = null;
-  for (const a of anchors) {
+  const TEXT_PATTERN = /privacy( policy| notice)?|data protection|your data|gdpr|ccpa/i;
+  const PATH_PATTERN = /\/(privacy|privacy-policy|privacy-notice|data-protection|legal\/privacy)(\/|$|[?#])/i;
+  const EXCLUDE = /privacy settings|cookie settings|privacy preferences|manage cookies/i;
+
+  function scoreAnchor(a) {
     const label = (a.textContent || '').trim();
+    const aria = (a.getAttribute('aria-label') || '').trim();
     const href = a.href || '';
-    if (!href || !/^https?:/.test(href)) continue;
-    if (EXCLUDE.test(label)) continue;
-    if (PATTERN.test(label) || PATTERN.test(href)) {
-      // Prefer links whose visible text (not just href) matches - stronger signal.
-      if (PATTERN.test(label) && (!best || !PATTERN.test(best.textMatch))) {
-        best = { href, textMatch: label };
-      } else if (!best) {
-        best = { href, textMatch: label };
-      }
-    }
+    if (!href || !/^https?:/.test(href)) return null;
+    if (EXCLUDE.test(label) || EXCLUDE.test(aria)) return null;
+    let path = '';
+    try { path = new URL(href).pathname; } catch (e) { /* ignore */ }
+    const textMatch = TEXT_PATTERN.test(label) || TEXT_PATTERN.test(aria);
+    const pathMatch = PATH_PATTERN.test(path);
+    if (!textMatch && !pathMatch) return null;
+    // Text match on a short, clean label ("Privacy", "Privacy Policy") is the
+    // strongest signal; a matching URL path alone is good too but slightly
+    // weaker (could be a blog post about privacy, etc).
+    const score = (textMatch ? 2 : 0) + (pathMatch ? 1 : 0);
+    return { href, label, score };
   }
-  const currentLooksLikePolicy = /privacy|terms/i.test(location.pathname) || /privacy policy|terms of service/i.test(document.title);
+
+  function bestFrom(anchors) {
+    let best = null;
+    for (const a of anchors) {
+      const scored = scoreAnchor(a);
+      if (scored && (!best || scored.score > best.score)) best = scored;
+    }
+    return best;
+  }
+
+  const footer = document.querySelector('footer');
+  const footerAnchors = footer ? Array.from(footer.querySelectorAll('a[href]')) : [];
+  const allAnchors = Array.from(document.querySelectorAll('a[href]'));
+
+  // Prefer a footer match over a same-scoring match elsewhere, footers are
+  // where these links live on the overwhelming majority of sites.
+  const best = bestFrom(footerAnchors) || bestFrom(allAnchors);
+
+  const currentLooksLikePolicy = PATH_PATTERN.test(location.pathname) || /privacy policy|privacy notice|terms of service/i.test(document.title);
   const fallbackText = document.body ? document.body.innerText.slice(0, 15000) : '';
-  return { linkUrl: best ? best.href : null, currentLooksLikePolicy, currentUrl: location.href, fallbackText };
+  return {
+    linkUrl: best ? best.href : null,
+    origin: location.origin,
+    currentLooksLikePolicy,
+    currentUrl: location.href,
+    fallbackText
+  };
 }
 
 function list(items) {
@@ -189,6 +223,37 @@ function renderPrivacyResult(data, policyUrl) {
   }
 }
 
+// Shared by both the auto-detect button and the manual-paste fallback.
+async function scanPolicyUrl(targetUrl, fallbackText) {
+  privResult.classList.remove('show');
+  privNote.textContent = '';
+  try {
+    const parsed = new URL(targetUrl);
+    if (!/^https?:$/.test(parsed.protocol)) {
+      privNote.textContent = 'Please enter a valid http(s) URL.';
+      return;
+    }
+  } catch (e) {
+    privNote.textContent = "That doesn't look like a valid URL.";
+    return;
+  }
+
+  const res = await fetch(PRIVACY_ENDPOINT, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ url: targetUrl, text: fallbackText || undefined })
+  });
+  const data = await res.json();
+
+  if (!res.ok || data.error) {
+    privNote.textContent = data.error || 'Could not scan this page right now.';
+    return;
+  }
+
+  privNote.textContent = '';
+  renderPrivacyResult(data, targetUrl);
+}
+
 privBtn.addEventListener('click', async () => {
   privBtn.disabled = true;
   const originalLabel = privBtn.textContent;
@@ -220,25 +285,12 @@ privBtn.addEventListener('click', async () => {
       targetUrl = result.currentUrl;
       fallbackText = result.fallbackText;
     } else {
-      privNote.textContent = "Couldn't find a privacy policy link on this page. Try opening the company's privacy policy page directly, then scan again.";
+      privNote.textContent = "Couldn't find a privacy policy link on this page. Try the box below to paste one directly, or open the company's privacy policy page and scan again.";
       return;
     }
 
     privBtn.textContent = 'Scanning…';
-    const res = await fetch(PRIVACY_ENDPOINT, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ url: targetUrl, text: fallbackText || undefined })
-    });
-    const data = await res.json();
-
-    if (!res.ok || data.error) {
-      privNote.textContent = data.error || 'Could not scan this page right now.';
-      return;
-    }
-
-    privNote.textContent = '';
-    renderPrivacyResult(data, targetUrl);
+    await scanPolicyUrl(targetUrl, fallbackText);
   } catch (err) {
     privNote.textContent = "Couldn't read this page (some pages, like the Chrome Web Store or internal browser pages, can't be scanned).";
   } finally {
@@ -246,6 +298,26 @@ privBtn.addEventListener('click', async () => {
     privBtn.textContent = originalLabel;
   }
 });
+
+/* ---------- privacy policy scanner: manual URL fallback ---------- */
+const privManualUrl = document.getElementById('privManualUrl');
+const privManualBtn = document.getElementById('privManualBtn');
+
+async function runManualScan() {
+  const url = privManualUrl.value.trim();
+  if (!url) { privNote.textContent = 'Paste a privacy policy URL first.'; return; }
+  privManualBtn.disabled = true;
+  const original = privManualBtn.textContent;
+  privManualBtn.textContent = '…';
+  try {
+    await scanPolicyUrl(url, null);
+  } finally {
+    privManualBtn.disabled = false;
+    privManualBtn.textContent = original;
+  }
+}
+privManualBtn.addEventListener('click', runManualScan);
+privManualUrl.addEventListener('keydown', (e) => { if (e.key === 'Enter') runManualScan(); });
 
 /* ---------- flagged-result banner ---------- */
 // On open, check whether background.js already flagged the current tab
