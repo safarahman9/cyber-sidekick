@@ -1,4 +1,4 @@
-// popup.js runs the "Scan this page" button and the auto-check toggle.
+// popup.js — runs the "Scan this page" button and the auto-check toggle.
 //
 // SAFEGUARDS (read this before changing anything):
 // 1. "Scan this page" only runs on click, using `activeTab`, access to the
@@ -254,6 +254,41 @@ async function scanPolicyUrl(targetUrl, fallbackText) {
   renderPrivacyResult(data, targetUrl);
 }
 
+// If no link was found in the page's DOM, most sites still put their policy
+// at one of a handful of standard paths. Try those against the same origin
+// before giving up - this covers link text/markup patterns the DOM search
+// didn't anticipate (JS-rendered footers, mega-menus, unusual wording).
+// Runs from the extension's own context, which has broad host_permissions,
+// so this cross-origin check isn't blocked by the page's own CORS policy.
+const COMMON_POLICY_PATHS = [
+  '/privacy', '/privacy-policy', '/privacypolicy', '/privacy-notice',
+  '/legal/privacy', '/legal/privacy-policy', '/policies/privacy',
+  '/about/privacy', '/en/privacy', '/privacy.html'
+];
+
+async function fetchWithTimeout(url, ms) {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { method: 'GET', signal: controller.signal, redirect: 'follow' });
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+async function guessPolicyUrl(origin) {
+  const attempts = COMMON_POLICY_PATHS.map(async (path) => {
+    try {
+      const res = await fetchWithTimeout(origin + path, 4000);
+      return res && res.ok ? res.url : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const results = await Promise.all(attempts);
+  return results.find(Boolean) || null;
+}
+
 privBtn.addEventListener('click', async () => {
   privBtn.disabled = true;
   const originalLabel = privBtn.textContent;
@@ -285,8 +320,12 @@ privBtn.addEventListener('click', async () => {
       targetUrl = result.currentUrl;
       fallbackText = result.fallbackText;
     } else {
-      privNote.textContent = "Couldn't find a privacy policy link on this page. Try the box below to paste one directly, or open the company's privacy policy page and scan again.";
-      return;
+      privBtn.textContent = 'Trying common paths…';
+      targetUrl = await guessPolicyUrl(result.origin);
+      if (!targetUrl) {
+        privNote.textContent = "Couldn't find a privacy policy on this page or at any standard location. Try the box below to paste one directly.";
+        return;
+      }
     }
 
     privBtn.textContent = 'Scanning…';
