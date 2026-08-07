@@ -48,7 +48,7 @@ async function setFlaggedResult(tabId, url, threats) {
   try {
     await chrome.action.setBadgeText({ tabId, text: '!' });
     await chrome.action.setBadgeBackgroundColor({ tabId, color: '#C5221F' });
-    await chrome.action.setTitle({ tabId, title: 'Cybersafety Superhero: this site is flagged, click for details' });
+    await chrome.action.setTitle({ tabId, title: 'AI Cybersafety Superhero: this site is flagged, click for details' });
   } catch (e) { /* tab may be closed */ }
   try {
     await chrome.storage.session.set({ [RESULT_PREFIX + tabId]: { url, threats: threats || [], t: Date.now() } });
@@ -136,7 +136,7 @@ function highlightQuotesInPage(items) {
       const colors = COLORS[severity];
       mark.style.background = colors.bg;
       mark.style.color = colors.fg;
-      mark.title = severity === 'high' ? 'High concern - flagged by Cybersafety Superhero' : 'Worth reviewing - flagged by Cybersafety Superhero';
+      mark.title = severity === 'high' ? 'High concern - flagged by AI Cybersafety Superhero' : 'Worth reviewing - flagged by AI Cybersafety Superhero';
       try {
         range.surroundContents(mark);
         if (!firstMark) firstMark = mark;
