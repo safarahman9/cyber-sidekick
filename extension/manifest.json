@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Cyber Sidekick",
-  "short_name": "Cyber Sidekick",
+  "name": "AI Cybersafety Superhero",
+  "short_name": "AI Cybersafety Superhero",
   "version": "1.2.0",
   "description": "Check if a text, email, call, or link is a scam, right from your toolbar.",
   "permissions": ["activeTab", "scripting", "storage"],
@@ -11,7 +11,7 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Cyber Sidekick",
+    "default_title": "AI Cybersafety Superhero",
     "default_icon": {
       "16": "icon16.png",
       "48": "icon48.png",
