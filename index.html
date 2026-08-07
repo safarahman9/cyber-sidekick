@@ -193,6 +193,7 @@
   .launch-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
   @media (max-width:560px){.launch-grid{grid-template-columns:1fr;}}
   .launch-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 20px 22px;display:flex;flex-direction:column;gap:8px;transition:.15s;}
+  .launch-card.lc-wide{grid-column:1 / -1;}
   .launch-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 10px 24px rgba(63,61,158,.09);}
   .lc-icon{width:42px;height:42px;border-radius:11px;background:#ECEBF6;color:var(--accent);display:flex;align-items:center;justify-content:center;margin-bottom:2px;}
   .lc-title{font-weight:600;font-size:1.0625rem;color:var(--ink);letter-spacing:-.005em;}
@@ -200,7 +201,8 @@
   .lc-btn{align-self:flex-start;margin-top:8px;font-size:0.84375rem;font-weight:500;color:#fff;background:var(--accent);border:none;padding:9px 16px;border-radius:9px;cursor:grab;text-decoration:none;font-family:inherit;}
   .lc-sublink{align-self:flex-start;margin-top:8px;font-size:0.78125rem;font-weight:500;color:var(--accent);text-decoration:none;}
   .lc-sublink:hover{text-decoration:underline;}
-  .lc-manual-list{margin:8px 0 0;padding-left:18px;color:var(--muted);line-height:1.6;font-size:0.71875rem;}
+  .lc-manual-list{margin:8px 0 0;padding-left:18px;color:var(--muted);line-height:1.7;font-size:0.8125rem;}
+  .lc-manual-list li{margin-bottom:5px;}
   .lc-manual-list a{color:var(--accent);}
   .launch-card.lc-clickable{cursor:pointer;}
   .launch-card.lc-clickable:hover .lc-sublink{text-decoration:underline;}
@@ -355,7 +357,7 @@
     <h2>Other ways to use it</h2>
     <p class="launch-sub">Same checker underneath, including a downloadable app. Pick whatever fits how you actually run into these messages.</p>
     <div class="launch-grid">
-      <div class="launch-card">
+      <div class="launch-card lc-wide">
         <div class="lc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 18v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></div>
         <div class="lc-title">Download / install the app</div>
         <div class="lc-body" id="lcInstallBody">Add it to your home screen or desktop so it opens on its own, no browser tab needed.</div>
@@ -363,9 +365,9 @@
         <div class="lc-body" id="lcInstallBody2" style="margin-top:10px;font-weight:600;color:var(--ink);">Browser extension: install it in 5 steps</div>
         <ol class="lc-manual-list">
           <li><a href="https://github.com/safarahman9/cyber-sidekick/raw/main/extension.zip" download>Download the extension</a> (starts automatically), then unzip it.</li>
-          <li>Open <code>chrome://extensions</code> in Chrome.</li>
-          <li>Turn on <b>Developer mode</b> (top right corner).</li>
-          <li>Click <b>Load unpacked</b> and select the unzipped <code>extension</code> folder.</li>
+          <li>Open <code>chrome://extensions</code> in Chrome (type it directly into the address bar — by design, Chrome doesn't allow this as a clickable link).</li>
+          <li>Turn on <b>Developer mode</b> (top right corner). <a href="https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world" target="_blank" rel="noopener noreferrer">See Google's guide →</a></li>
+          <li>Click <b>Load unpacked</b> and select the unzipped <code>extension</code> folder. <a href="https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world" target="_blank" rel="noopener noreferrer">See Google's guide →</a></li>
           <li>Pin it to your toolbar from the puzzle-piece icon.</li>
         </ol>
       </div>
