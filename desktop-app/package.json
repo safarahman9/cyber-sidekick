@@ -1,7 +1,7 @@
 {
   "name": "cybersafety-superhero-desktop",
   "version": "1.0.0",
-  "description": "Desktop app for Cybersafety Superhero, a native wrapper around the web app.",
+  "description": "Desktop app for AI Cybersafety Superhero, a native wrapper around the web app.",
   "main": "main.js",
   "author": "Team T3",
   "license": "UNLICENSED",
@@ -16,7 +16,7 @@
   },
   "build": {
     "appId": "com.knowledgeflow.cybersafetysuperhero",
-    "productName": "Cybersafety Superhero",
+    "productName": "AI Cybersafety Superhero",
     "files": ["main.js", "icon.png", "package.json"],
     "win": {
       "target": "nsis",
