@@ -20,7 +20,7 @@
 
 const STORAGE_KEY = 'autoCheckEnabled';
 const RESULT_PREFIX = 'tabResult_';
-const CHECK_ENDPOINT = 'https://unique-khapse-3e711e.netlify.app/.netlify/functions/site-check';
+const CHECK_ENDPOINT = 'https://aicybersafetysuperhero.netlify.app/.netlify/functions/site-check';
 
 const EXCLUDE_HOSTS = [
   'rbc.com', 'royalbank.com', 'scotiabank.com', 'td.com', 'bmo.com', 'cibc.com',
