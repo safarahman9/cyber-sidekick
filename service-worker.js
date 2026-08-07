@@ -9,7 +9,7 @@ self.addEventListener("install", (e) => {
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
 
-  // Incoming share (long-press an image/link on mobile, tap Share, pick Cyber Sidekick).
+  // Incoming share (long-press an image/link on mobile, tap Share, pick AI Cybersafety Superhero).
   // The OS POSTs form data here; pull out the file and any text/url/title, stash them
   // where index.html can read them on load, then redirect to a normal GET navigation.
   if (e.request.method === "POST" && url.pathname.endsWith("/share-target.html")) {
