@@ -1,4 +1,4 @@
-// main.js — Electron main process for the Cybersafety Superhero desktop app.
+// main.js Electron main process for the AI Cybersafety Superhero desktop app.
 //
 // This is a thin native wrapper around the live PWA, same idea as the
 // browser extension's popup.html iframe: one source of truth (the deployed
@@ -22,7 +22,7 @@ function createWindow() {
     height: 820,
     minWidth: 380,
     minHeight: 560,
-    title: "Cybersafety Superhero",
+    title: "AI Cybersafety Superhero",
     icon: path.join(__dirname, "icon.png"),
     webPreferences: {
       contextIsolation: true,
