@@ -45,7 +45,7 @@ This uses `electron-builder`, which reads the `build` section of
 ## What it does
 
 `main.js` opens a native window pointed at your live deployment
-(`unique-khapse-3e711e.netlify.app`). It is not a separate offline app —
+(`aicybersafetysuperhero.netlify.app`). It is not a separate offline app —
 the chat, diary, and privacy scanner still call your Netlify functions over
 the internet exactly like the website and extension do. This keeps one
 source of truth: fix a bug in the web app, and the desktop app is
