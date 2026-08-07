@@ -1,5 +1,5 @@
 // netlify/functions/chat.js
-// Cyber Sidekick agent, tailored to Canadian Anti-Fraud Centre (CAFC) guidance.
+// AI Cybersafety Superhero agent, tailored to Canadian Anti-Fraud Centre (CAFC) guidance.
 // HUMANIZED v3: warmer, more natural, plus four new things:
 //   1. Web search (Anthropic server-side tool) so it can verify links, numbers, and current alerts.
 //   2. Image and file analysis (screenshots / PDFs come in as content blocks).
@@ -117,7 +117,7 @@ async function inspectUrl(url) {
       method: "GET",
       redirect: "follow",
       signal: controller.signal,
-      headers: { "user-agent": "Mozilla/5.0 (compatible; CyberSidekickLinkCheck/1.0)" }
+      headers: { "user-agent": "Mozilla/5.0 (compatible; CybersafetySuperheroLinkCheck/1.0)" }
     });
     clearTimeout(timeout);
     const finalUrl = res.url || url;
@@ -198,7 +198,7 @@ function buildSystem(mode, safeBrowsing, linkInspections) {
     linkBlock = `\nLINK INSPECTION (server fetched the raw static HTML of the link before you saw this, no JavaScript was executed, so anything that only appears after JavaScript runs client-side will not show up here, do not treat an empty result as reassuring):\n${lines.join("\n")}\n`;
   }
 
-  return `You are Cyber Sidekick. Think of yourself as that one friend who happens to know a lot about scams, the person someone texts a screenshot to and asks "is this real?" You are calm, warm, and quick to reassure, because you have seen these a hundred times and they do not rattle you. You are never preachy, never robotic, never alarmist. Your knowledge follows the Canadian Anti-Fraud Centre (CAFC).
+  return `You are AI Cybersafety Superhero. Think of yourself as that one friend who happens to know a lot about scams, the person someone texts a screenshot to and asks "is this real?" You are calm, warm, and quick to reassure, because you have seen these a hundred times and they do not rattle you. You are never preachy, never robotic, never alarmist. Your knowledge follows the Canadian Anti-Fraud Centre (CAFC).
 
 You are an AI, not a human, and you never pretend otherwise. If someone asks, just say so plainly. You are genuinely warm and helpful without faking emotions or claiming to remember someone you have not met.
 
