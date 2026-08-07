@@ -203,6 +203,17 @@ function renderPrivacyResult(data, policyUrl) {
       }).join('')}</ul>`
     : '';
 
+  // Every href here was verified server-side to be a real link pulled
+  // straight from the scanned page - never a guessed or generic URL. See
+  // findPolicyUrlViaSearch / next_steps validation in privacy-scan.js.
+  const steps = Array.isArray(data.next_steps) ? data.next_steps.filter((s) => s && s.href) : [];
+  const stepsHtml = steps.length
+    ? `<div class="priv-section next-steps"><h3>Take action</h3>${steps.map((s, i) => {
+        const icon = s.type === 'mailto' ? '✉️' : '↗';
+        return `<a class="priv-action" href="${escapeHTML(s.href)}" target="_blank" rel="noopener noreferrer">${icon} ${escapeHTML(s.label || 'Open link')}</a>`;
+      }).join('')}</div>`
+    : '';
+
   privResult.innerHTML = `
     <span class="priv-risk ${risk}">${escapeHTML(data.risk_level || 'Medium')} permissiveness</span>
     <div class="priv-summary">${escapeHTML(data.summary || '')}</div>
@@ -210,6 +221,7 @@ function renderPrivacyResult(data, policyUrl) {
     <div class="priv-section"><h3>Shared with</h3>${list(data.shared_with)}</div>
     <div class="priv-section"><h3>Your rights</h3>${list(data.your_rights)}</div>
     ${flags.length ? `<div class="priv-section flags"><h3>Red flags</h3>${flagList}</div>` : ''}
+    ${stepsHtml}
     <a class="priv-link" href="${policyUrl}" target="_blank" rel="noopener noreferrer" id="privOpenPlain">View the full policy →</a>
     ${flags.length ? `<button class="privbtn" id="privHighlightBtn" style="margin-top:8px;">🔦 Open policy &amp; highlight flags</button>` : ''}
   `;
