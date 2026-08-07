@@ -1,4 +1,4 @@
-# Cyber Sidekick — Browser Extension (free, unpacked)
+# AI Cybersafety Superhero — Browser Extension (free, unpacked)
 
 This is a minimal browser extension shell. It doesn't duplicate any of the
 chat, diary, or scan logic — the popup just loads the live deployed PWA
@@ -12,7 +12,7 @@ two entry points: the website and the toolbar icon.
 2. Turn on **Developer mode** (top-right toggle)
 3. Click **Load unpacked**
 4. Select this `extension` folder
-5. The Cyber Sidekick icon appears in your toolbar — click it to open the popup
+5. The AI Cybersafety Superhero icon appears in your toolbar — click it to open the popup
 
 **Firefox:**
 1. Go to `about:debugging#/runtime/this-firefox`
