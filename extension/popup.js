@@ -1,4 +1,4 @@
-// popup.js runs the "Scan this page" button and the auto-check toggle.
+// popup.js — runs the "Scan this page" button and the auto-check toggle.
 //
 // SAFEGUARDS (read this before changing anything):
 // 1. "Scan this page" only runs on click, using `activeTab`, access to the
@@ -56,7 +56,7 @@ scanBtn.addEventListener('click', async () => {
     }
 
     if (isExcluded(hostname)) {
-      scanNote.textContent = 'This looks like a banking, government, or account-login page. Cybersafety Superhero does not automatically read pages like this. Paste specific text into the chat below instead if you want it checked.';
+      scanNote.textContent = 'This looks like a banking, government, or account-login page. AI Cybersafety Superhero does not automatically read pages like this. Paste specific text into the chat below instead if you want it checked.';
       return;
     }
 
@@ -78,7 +78,7 @@ scanBtn.addEventListener('click', async () => {
     // Reuses the same ?scanurl=&scantitle=&scantext= handler the bookmarklet
     // and share-target already use on the live site, no new endpoint needed.
     app.src = 'https://unique-khapse-3e711e.netlify.app/?' + params.toString();
-    scanNote.textContent = 'Sent the current page to Cybersafety Superhero below.';
+    scanNote.textContent = 'Sent the current page to AI Cybersafety Superhero below.';
   } catch (err) {
     scanNote.textContent = "Couldn't read this page (some pages, like the Chrome Web Store or internal browser pages, can't be scanned). Paste text into the chat below instead.";
   } finally {
