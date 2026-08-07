@@ -12,7 +12,7 @@
 // 3. EXCLUDE_HOSTS below is a starting list of sensitive destinations
 //    (banking, government login, major identity providers) that are
 //    never scanned automatically, even on click. This list is illustrative,
-//    not exhaustive — extend it before relying on it for anything beyond a
+//    not exhaustive, extend it before relying on it for anything beyond a
 //    demo. When a page matches, the button explains why and stops.
 // 4. Only URL, page title, and a short slice of visible text are read on
 //    click. No form field values, no cookies, no storage, no page HTML
@@ -56,7 +56,7 @@ scanBtn.addEventListener('click', async () => {
     }
 
     if (isExcluded(hostname)) {
-      scanNote.textContent = 'This looks like a banking, government, or account-login page. Cyber Sidekick does not automatically read pages like this. Paste specific text into the chat below instead if you want it checked.';
+      scanNote.textContent = 'This looks like a banking, government, or account-login page. Cybersafety Superhero does not automatically read pages like this. Paste specific text into the chat below instead if you want it checked.';
       return;
     }
 
@@ -78,7 +78,7 @@ scanBtn.addEventListener('click', async () => {
     // Reuses the same ?scanurl=&scantitle=&scantext= handler the bookmarklet
     // and share-target already use on the live site, no new endpoint needed.
     app.src = 'https://unique-khapse-3e711e.netlify.app/?' + params.toString();
-    scanNote.textContent = 'Sent the current page to Cyber Sidekick below.';
+    scanNote.textContent = 'Sent the current page to Cybersafety Superhero below.';
   } catch (err) {
     scanNote.textContent = "Couldn't read this page (some pages, like the Chrome Web Store or internal browser pages, can't be scanned). Paste text into the chat below instead.";
   } finally {
@@ -100,6 +100,91 @@ chrome.storage.local.get(STORAGE_KEY).then((stored) => {
 
 autoToggle.addEventListener('change', () => {
   chrome.storage.local.set({ [STORAGE_KEY]: autoToggle.checked });
+});
+
+/* ---------- report to CAFC ---------- */
+document.getElementById('reportBtn').addEventListener('click', () => {
+  chrome.tabs.create({ url: 'https://antifraudcentre-centreantifraude.ca/report-signalez-eng.htm' });
+});
+
+/* ---------- privacy policy scanner ---------- */
+// Same shape of trust as "Scan this page": activeTab + scripting, only on
+// click, only the current tab's visible text, nothing read automatically.
+// Sends that text to privacy-scan.js (same backend/API key as chat.js).
+const PRIVACY_ENDPOINT = 'https://unique-khapse-3e711e.netlify.app/.netlify/functions/privacy-scan';
+
+const privBtn = document.getElementById('privBtn');
+const privNote = document.getElementById('privNote');
+const privResult = document.getElementById('privResult');
+
+function escapeHTML(value) {
+  return String(value)
+    .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+}
+
+function renderPrivacyResult(data, pageUrl) {
+  const risk = (data.risk_level || 'Medium').toLowerCase();
+  const list = (items) => (items && items.length)
+    ? `<ul>${items.map((i) => `<li>${escapeHTML(i)}</li>`).join('')}</ul>`
+    : `<ul><li>Not clearly addressed in this text</li></ul>`;
+
+  privResult.innerHTML = `
+    <span class="priv-risk ${risk}">${escapeHTML(data.risk_level || 'Medium')} permissiveness</span>
+    <div class="priv-summary">${escapeHTML(data.summary || '')}</div>
+    <div class="priv-section"><h3>Data collected</h3>${list(data.data_collected)}</div>
+    <div class="priv-section"><h3>Shared with</h3>${list(data.shared_with)}</div>
+    <div class="priv-section"><h3>Your rights</h3>${list(data.your_rights)}</div>
+    ${data.red_flags && data.red_flags.length ? `<div class="priv-section flags"><h3>Red flags</h3>${list(data.red_flags)}</div>` : ''}
+    <a class="priv-link" href="${pageUrl}" target="_blank" rel="noopener noreferrer">View the full policy →</a>
+  `;
+  privResult.classList.add('show');
+}
+
+privBtn.addEventListener('click', async () => {
+  privBtn.disabled = true;
+  const originalLabel = privBtn.textContent;
+  privBtn.textContent = 'Scanning…';
+  privResult.classList.remove('show');
+
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.id || !tab.url) throw new Error('no active tab');
+    if (!/^https?:$/.test(new URL(tab.url).protocol)) {
+      privNote.textContent = "This isn't a regular web page, so there's nothing to scan here.";
+      return;
+    }
+
+    const [{ result }] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => ({ text: document.body ? document.body.innerText.slice(0, 15000) : '', title: document.title })
+    });
+
+    if (!result || !result.text || result.text.trim().length < 200) {
+      privNote.textContent = "Couldn't find enough text on this page to summarize. Open the company's privacy policy or terms page directly, then try again.";
+      return;
+    }
+
+    const res = await fetch(PRIVACY_ENDPOINT, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: result.text, url: tab.url })
+    });
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      privNote.textContent = data.error || 'Could not scan this page right now.';
+      return;
+    }
+
+    privNote.textContent = '';
+    renderPrivacyResult(data, tab.url);
+  } catch (err) {
+    privNote.textContent = "Couldn't read this page (some pages, like the Chrome Web Store or internal browser pages, can't be scanned).";
+  } finally {
+    privBtn.disabled = false;
+    privBtn.textContent = originalLabel;
+  }
 });
 
 /* ---------- flagged-result banner ---------- */
