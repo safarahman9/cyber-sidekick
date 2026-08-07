@@ -116,13 +116,15 @@ Respond with ONLY a single valid JSON object, nothing before or after it, no mar
   "data_collected": ["short phrase", "short phrase", ...],
   "shared_with": ["short phrase naming who data is shared with and why", ...],
   "your_rights": ["short phrase describing a right the policy grants, e.g. 'Request deletion of your data'", ...],
-  "red_flags": [{"flag": "short plain-language label for the concern", "quote": "a short excerpt, under 12 words, copied exactly from the text, that this concern comes from"}, ...],
+  "red_flags": [{"flag": "short plain-language label for the concern", "quote": "a short excerpt, under 12 words, copied exactly from the text, that this concern comes from", "severity": "High" | "Medium"}, ...],
   "risk_level": "Low" | "Medium" | "High"
 }
 
 Guidance:
 - data_collected, shared_with, your_rights: 2-6 short plain-language items each. Empty array if genuinely not addressed.
 - red_flags: 0-5 items, only things like broad third-party data sales, vague retention periods, no opt-out, arbitration clauses waiving rights, data shared with unnamed "partners". Leave the array empty if the policy is reasonably standard, don't invent flags to fill space.
+- severity "High" (shown in red): the company can clearly sell/share data broadly with limited control, waives meaningful legal rights (e.g. mandatory arbitration, class-action waiver), offers no deletion or opt-out path, or is vague specifically about something consequential (payment data, biometric data, location).
+- severity "Medium" (shown in yellow): worth a careful read but fairly standard for the industry - long retention windows, broad "affiliates" sharing, standard analytics/advertising cookies, opt-out requires an email rather than a toggle.
 - Each red flag's "quote" MUST be copied verbatim (exact words, under 12 words) from the provided text, so it can be located and highlighted on the real page. If you can't find a short exact quote that supports a concern, don't include that flag.
 - risk_level reflects how permissive the policy is toward the company, not whether the company is a "scam" - a normal, standard corporate privacy policy is typically Low or Medium.
 - If the provided text is not actually a privacy policy or terms page, still return the JSON shape, with summary explaining that, and empty arrays.
