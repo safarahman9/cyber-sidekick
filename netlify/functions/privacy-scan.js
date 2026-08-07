@@ -33,6 +33,36 @@ function stripHtmlToText(html) {
     .trim();
 }
 
+// Pulls every real link (and its visible text) out of the raw HTML, so
+// Claude can be told "pick from THESE, verbatim" instead of being asked to
+// name a URL from memory - this is what keeps next_steps links honest,
+// they can only ever be a link that's actually on the page.
+const MAX_LINKS = 250;
+function extractLinks(html, baseUrl) {
+  const links = [];
+  const re = /<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let m;
+  while ((m = re.exec(html)) && links.length < MAX_LINKS) {
+    const rawHref = m[1].trim();
+    const text = m[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
+    if (!rawHref || /^(#|javascript:)/i.test(rawHref)) continue;
+    let href;
+    try { href = new URL(rawHref, baseUrl).href; } catch (e) { continue; }
+    if (!/^(https?|mailto):/i.test(href)) continue;
+    links.push({ href, text });
+  }
+  // Also catch bare mailto-worthy email addresses in plain text that
+  // aren't wrapped in an <a> tag (some policies just print the address).
+  const emailRe = /\b[\w.+-]+@[\w-]+\.[\w.-]+\b/g;
+  let em;
+  const seen = new Set(links.map((l) => l.href));
+  while ((em = emailRe.exec(html)) && links.length < MAX_LINKS) {
+    const mailto = "mailto:" + em[0];
+    if (!seen.has(mailto)) { links.push({ href: mailto, text: em[0] }); seen.add(mailto); }
+  }
+  return links;
+}
+
 async function fetchPolicyText(url) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -63,7 +93,8 @@ async function fetchPolicyText(url) {
     }
     const text = stripHtmlToText(html).slice(0, 18000);
     if (text.length < 200) return { ok: false, error: "That page didn't have enough readable text to summarize." };
-    return { ok: true, text };
+    const links = extractLinks(html, res.url || url);
+    return { ok: true, text, links };
   } catch (e) {
     return { ok: false, error: e.name === "AbortError" ? "That page took too long to load." : "Could not reach that page." };
   } finally {
@@ -106,7 +137,7 @@ async function findPolicyUrlViaSearch(company) {
 }
 
 function buildSystem() {
-  return `You are a privacy policy analyst for Cybersafety Superhero. You will be given the visible text of a company's privacy policy or terms page. Summarize it plainly, for someone with no legal background, so they can decide whether to trust the site with their data.
+  return `You are a privacy policy analyst for Cybersafety Superhero. You will be given the visible text of a company's privacy policy or terms page, plus a list of the REAL links found on that page. Summarize the policy plainly, for someone with no legal background, so they can decide whether to trust the site with their data, and surface concrete next steps using ONLY real links from the provided list.
 
 Respond with ONLY a single valid JSON object, nothing before or after it, no markdown fences. Use this exact shape:
 
@@ -117,6 +148,7 @@ Respond with ONLY a single valid JSON object, nothing before or after it, no mar
   "shared_with": ["short phrase naming who data is shared with and why", ...],
   "your_rights": ["short phrase describing a right the policy grants, e.g. 'Request deletion of your data'", ...],
   "red_flags": [{"flag": "short plain-language label for the concern", "quote": "a short excerpt, under 12 words, copied exactly from the text, that this concern comes from", "severity": "High" | "Medium"}, ...],
+  "next_steps": [{"label": "short imperative action, under 10 words", "type": "link" | "mailto", "href": "copied EXACTLY from the provided links list"}, ...],
   "risk_level": "Low" | "Medium" | "High"
 }
 
@@ -126,6 +158,7 @@ Guidance:
 - severity "High" (shown in red): the company can clearly sell/share data broadly with limited control, waives meaningful legal rights (e.g. mandatory arbitration, class-action waiver), offers no deletion or opt-out path, or is vague specifically about something consequential (payment data, biometric data, location).
 - severity "Medium" (shown in yellow): worth a careful read but fairly standard for the industry - long retention windows, broad "affiliates" sharing, standard analytics/advertising cookies, opt-out requires an email rather than a toggle.
 - Each red flag's "quote" MUST be copied verbatim (exact words, under 12 words) from the provided text, so it can be located and highlighted on the real page. If you can't find a short exact quote that supports a concern, don't include that flag.
+- next_steps: 0-4 items. This is the most important accuracy rule in this whole task: "href" MUST be copied character-for-character from the provided links list. NEVER invent, guess, construct, or modify a URL, even one that seems obviously right (e.g. never assume "/privacy/opt-out" exists just because it sounds plausible). If no link in the list matches a given action (data deletion request, ad opt-out, do-not-sell, account privacy settings, unsubscribe, contact the privacy team), do not include that action at all. It is far better to return fewer next_steps than to include a single fabricated link. type is "mailto" only for an href that starts with mailto:, otherwise "link".
 - risk_level reflects how permissive the policy is toward the company, not whether the company is a "scam" - a normal, standard corporate privacy policy is typically Low or Medium.
 - If the provided text is not actually a privacy policy or terms page, still return the JSON shape, with summary explaining that, and empty arrays.
 - Never invent specifics (numbers, laws, company details) not present in the text.`;
@@ -169,12 +202,19 @@ exports.handler = async (event) => {
       fetched = await fetchPolicyText(url);
     }
 
+    let links = fetched && fetched.ok ? fetched.links : [];
+
     if (fetched && fetched.ok) {
       text = fetched.text;
     } else if (!text) {
       return { statusCode: 502, body: JSON.stringify({ error: (fetched && fetched.error) || "Could not load that page." }) };
     }
-    // else: fetch failed but client already sent text as a fallback, use that.
+    // else: fetch failed but client already sent text as a fallback, use that
+    // (no real links available in this path, so next_steps will come back empty).
+
+    const linksBlock = links && links.length
+      ? links.map((l) => `${l.href}${l.text ? "  (link text: " + l.text + ")" : ""}`).join("\n")
+      : "(none extracted - do not include any next_steps)";
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -185,9 +225,9 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 1000,
+        max_tokens: 1200,
         system: buildSystem(),
-        messages: [{ role: "user", content: `Page URL: ${url || "(not provided)"}\n\nPage text:\n${text}` }]
+        messages: [{ role: "user", content: `Page URL: ${url || "(not provided)"}\n\nPage text:\n${text}\n\nReal links found on this page (next_steps hrefs MUST be copied exactly from this list, or omitted):\n${linksBlock}` }]
       })
     });
 
@@ -204,6 +244,16 @@ exports.handler = async (event) => {
       parsed = JSON.parse(cleaned);
     } catch (e) {
       return { statusCode: 502, body: JSON.stringify({ error: "Could not parse policy summary" }) };
+    }
+
+    // Defense in depth: don't just trust the prompt. Drop any next_step
+    // whose href isn't an exact match to something actually extracted from
+    // the page, so a hallucinated link can never reach the person.
+    if (Array.isArray(parsed.next_steps)) {
+      const realHrefs = new Set((links || []).map((l) => l.href));
+      parsed.next_steps = parsed.next_steps.filter((step) => step && realHrefs.has(step.href));
+    } else {
+      parsed.next_steps = [];
     }
 
     parsed.url = url;
