@@ -2,7 +2,7 @@
 
 This is a minimal browser extension shell. It doesn't duplicate any of the
 chat, diary, or scan logic — the popup just loads the live deployed PWA
-(`https://unique-khapse-3e711e.netlify.app/`) in an iframe. One codebase,
+(`https://aicybersafetysuperhero.netlify.app/`) in an iframe. One codebase,
 two entry points: the website and the toolbar icon.
 
 ## Load it for free (no Chrome Web Store account or fee needed)
