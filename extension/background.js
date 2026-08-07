@@ -48,7 +48,7 @@ async function setFlaggedResult(tabId, url, threats) {
   try {
     await chrome.action.setBadgeText({ tabId, text: '!' });
     await chrome.action.setBadgeBackgroundColor({ tabId, color: '#C5221F' });
-    await chrome.action.setTitle({ tabId, title: 'Cyber Sidekick: this site is flagged, click for details' });
+    await chrome.action.setTitle({ tabId, title: 'Cybersafety Superhero: this site is flagged, click for details' });
   } catch (e) { /* tab may be closed */ }
   try {
     await chrome.storage.session.set({ [RESULT_PREFIX + tabId]: { url, threats: threats || [], t: Date.now() } });
@@ -93,4 +93,68 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 // in session storage past the tab's own lifetime.
 chrome.tabs.onRemoved.addListener((tabId) => {
   chrome.storage.session.remove(RESULT_PREFIX + tabId).catch(() => {});
+});
+
+// ---------- privacy policy: open + highlight flagged quotes ----------
+// Handled here rather than in popup.js because opening a new tab often
+// steals focus and closes the extension popup before it could finish
+// waiting for the page to load. The background service worker has no such
+// lifecycle problem, it keeps running independent of the popup.
+//
+// Only ever touches the ONE tab it just opened for this purpose, using the
+// short verbatim quotes privacy-scan.js already returned. No new page
+// content is read or sent anywhere, this only searches text already
+// visible in the tab it opens.
+function highlightQuotesInPage(quotes) {
+  if (!Array.isArray(quotes) || !quotes.length) return;
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+  const nodes = [];
+  let n;
+  while ((n = walker.nextNode())) nodes.push(n);
+
+  let firstMark = null;
+  for (const quote of quotes) {
+    const needle = quote.trim();
+    if (needle.length < 4) continue;
+    for (const node of nodes) {
+      if (!node.parentNode) continue;
+      const idx = node.textContent.toLowerCase().indexOf(needle.toLowerCase());
+      if (idx === -1) continue;
+      const range = document.createRange();
+      range.setStart(node, idx);
+      range.setEnd(node, idx + needle.length);
+      const mark = document.createElement('mark');
+      mark.style.background = '#FFE066';
+      mark.style.color = '#1A1A2B';
+      mark.title = 'Flagged by Cybersafety Superhero';
+      try {
+        range.surroundContents(mark);
+        if (!firstMark) firstMark = mark;
+      } catch (e) { /* range spans multiple elements, skip this one */ }
+      break; // only the first match per quote, to avoid over-marking repeated boilerplate
+    }
+  }
+  if (firstMark) firstMark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+chrome.runtime.onMessage.addListener((message) => {
+  if (message?.type !== 'HIGHLIGHT_POLICY' || !message.url) return;
+
+  chrome.tabs.create({ url: message.url }, (newTab) => {
+    if (!newTab || !newTab.id) return;
+    const targetTabId = newTab.id;
+
+    function onUpdated(tabId, changeInfo) {
+      if (tabId !== targetTabId || changeInfo.status !== 'complete') return;
+      chrome.tabs.onUpdated.removeListener(onUpdated);
+      if (message.quotes && message.quotes.length) {
+        chrome.scripting.executeScript({
+          target: { tabId: targetTabId },
+          func: highlightQuotesInPage,
+          args: [message.quotes]
+        }).catch(() => { /* page may block scripting (e.g. Chrome Web Store), fail silently */ });
+      }
+    }
+    chrome.tabs.onUpdated.addListener(onUpdated);
+  });
 });
